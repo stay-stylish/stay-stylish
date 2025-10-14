@@ -29,6 +29,11 @@ assignees: seonrizee
 
 <br>
 
+## 🕐 예상 마감일
+- 2025-??-??
+
+<br>
+
 ## ✅ 참고 사항
 > (선택 사항) 관련 Lofi-wireframe, 참고 자료, 논의 내용 등을 추가해주세요.
 
