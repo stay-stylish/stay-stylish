@@ -2,6 +2,7 @@ package org.example.staystylish.domain.user.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.example.staystylish.domain.user.entity.User;
@@ -12,6 +13,7 @@ public record SignupRequest(
         @NotBlank String nickname,
         String region,
         String stylePreference,
+        @Pattern(regexp = "^(?i)MALE|FEMALE$", message = "gender는 MALE 또는 FEMALE만 가능합니다.")
         String gender,
         String provider,
         String providerId

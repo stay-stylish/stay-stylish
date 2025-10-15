@@ -6,6 +6,8 @@ import org.example.staystylish.domain.user.dto.request.LoginRequest;
 import org.example.staystylish.domain.user.dto.request.SignupRequest;
 import org.example.staystylish.domain.user.dto.response.UserResponse;
 import org.example.staystylish.domain.user.entity.User;
+import org.example.staystylish.domain.user.exception.UserErrorCode;
+import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +26,7 @@ public class AuthService {
     @Transactional
     public UserResponse signup(SignupRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+            throw new UserException(UserErrorCode.EMAIL_DUPLICATED);
         }
 
         User user = request.toEntity(passwordEncoder.encode(request.password()));
@@ -35,10 +37,10 @@ public class AuthService {
     @Transactional(readOnly = true)
     public String login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
+            throw new UserException(UserErrorCode.INVALID_PASSWORD);
         }
 
         return jwtProvider.generateToken(user.getEmail());

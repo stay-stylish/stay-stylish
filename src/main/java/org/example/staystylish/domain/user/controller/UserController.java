@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.dto.response.ApiResponse;
 import org.example.staystylish.common.security.UserPrincipal;
 import org.example.staystylish.domain.user.dto.request.LoginRequest;
+import org.example.staystylish.domain.user.dto.request.ProfileUpdateRequest;
 import org.example.staystylish.domain.user.dto.request.SignupRequest;
 import org.example.staystylish.domain.user.dto.response.UserResponse;
 import org.example.staystylish.domain.user.exception.UserSuccessCode;
@@ -47,13 +48,16 @@ public class UserController {
     @PutMapping("/users/me")
     public ApiResponse<UserResponse> updateProfile(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestParam String nickname,
-            @RequestParam String stylePreference,
-            @RequestParam String region,
-            @RequestParam String gender
+            @Valid @RequestBody ProfileUpdateRequest request
     ) {
         return ApiResponse.of(UserSuccessCode.PROFILE_UPDATE_SUCCESS,
-                userService.updateProfile(principal.getUser(), nickname, stylePreference, region, gender));
+                userService.updateProfile(
+                        principal.getUser(),
+                        request.nickname(),
+                        request.stylePreference(),
+                        request.region(),
+                        request.toGender()
+                ));
     }
 
     // 회원 탈퇴 (소프트 삭제)
