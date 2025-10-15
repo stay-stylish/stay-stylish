@@ -1,9 +1,9 @@
 spring:
   application:
-    name: your-app-name
+    name: stay-stylish
 
   profiles:
-    active: personal  # ?? ?? ?? ???
+    active: docker
 
   jpa:
     open-in-view: false
