@@ -11,6 +11,7 @@ import org.example.staystylish.common.exception.GlobalException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -45,7 +46,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<?>> handleMethodArgumentTypeMismatchException(
             MethodArgumentTypeMismatchException e) {
 
-        log.error("MethodArgumentTypeMismatchException", e);
+        log.error("MethodArgumentTypeMismatchException: {}", e.getMessage(), e);
 
         return handleExceptionInternal(CommonErrorCode.INVALID_TYPE_VALUE);
     }
@@ -67,6 +68,16 @@ public class GlobalExceptionHandler {
         log.error("HttpMessageNotReadableException", e);
 
         return handleExceptionInternal(CommonErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    // 지원하지 않는 HTTP 메서드 예외 처리
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<?>> handleHttpRequestMethodNotSupportedException(
+            HttpRequestMethodNotSupportedException e) {
+
+        log.error("HttpRequestMethodNotSupportedException: {}", e.getMessage());
+
+        return handleExceptionInternal(CommonErrorCode.METHOD_NOT_ALLOWED);
     }
 
     // 그 외 예외 처리
