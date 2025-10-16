@@ -7,7 +7,7 @@ import java.time.LocalDate;
 public record TravelOutfitRequest(
         @NotBlank String country,
         @NotBlank String city,
-        @NotNull LocalDate startdate,
-        @NotNull LocalDate enddate
+        @NotNull LocalDate startDate,
+        @NotNull LocalDate endDate
 ) {
 }

@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.staystylish.common.entity.BaseEntity;
@@ -39,24 +40,25 @@ public class TravelOutfit extends BaseEntity {
     @Column(columnDefinition = "jsonb")
     private String aiOutfitJson;
 
+    @Builder
     public static TravelOutfit create(Long userId, String country, String city,
                                       LocalDate startDate, LocalDate endDate,
                                       Double avgTemperature, Integer avgHumidity,
                                       Integer rainProbability, String condition,
                                       String culturalConstraintsJson, String aiOutfitJson) {
 
-        TravelOutfit outfit = new TravelOutfit();
-        outfit.userId = userId;
-        outfit.country = country;
-        outfit.city = city;
-        outfit.startDate = startDate;
-        outfit.endDate = endDate;
-        outfit.avgTemperature = avgTemperature;
-        outfit.avgHumidity = avgHumidity;
-        outfit.rainProbability = rainProbability;
-        outfit.condition = condition;
-        outfit.culturalConstraintsJson = culturalConstraintsJson;
-        outfit.aiOutfitJson = aiOutfitJson;
-        return outfit;
+        return TravelOutfit.builder()
+                .userId(userId)
+                .country(country)
+                .city(city)
+                .startDate(startDate)
+                .endDate(endDate)
+                .avgTemperature(avgTemperature)
+                .avgHumidity(avgHumidity)
+                .rainProbability(rainProbability)
+                .condition(condition)
+                .culturalConstraintsJson(culturalConstraintsJson)
+                .aiOutfitJson(aiOutfitJson)
+                .build();
     }
 }
