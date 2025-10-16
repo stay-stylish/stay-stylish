@@ -13,7 +13,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
+  #        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   output:
     ansi:
@@ -23,3 +23,12 @@ logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+
+jwt:
+  secret: Vz8vQ3V4WjNicU54Njlyb1p1OHlhM0JFY1U4eUg3a2YxWjZoTjJlVg==
+  access-expiration: 1800000
+  refresh-expiration: 1209600000
+
+weatherapi:
+  base-url: https://api.weatherapi.com/v1
+  api-key: ${WEATHER_API_KEY}   # .env 또는 서버 환경변수로 주입
