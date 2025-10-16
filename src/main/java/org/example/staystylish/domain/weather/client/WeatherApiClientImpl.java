@@ -14,6 +14,7 @@ import org.example.staystylish.domain.weather.dto.WeatherApiResponse;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -24,7 +25,7 @@ public class WeatherApiClientImpl implements WeatherApiClient {
     private final WebClient weatherApiWebClient;
 
     @Override
-    public List<Daily> getDailyForecast(String city, LocalDate start, LocalDate end) {
+    public Mono<List<Daily>> getDailyForecast(String city, LocalDate start, LocalDate end) {
 
         LocalDate today = LocalDate.now();
 
@@ -37,7 +38,7 @@ public class WeatherApiClientImpl implements WeatherApiClient {
             throw new GlobalException(WeatherErrorCode.INVALID_DATE_RANGE);
         }
 
-        WeatherApiResponse response = weatherApiWebClient.get()
+        return weatherApiWebClient.get()
                 .uri(b -> b.path("/forecast.json")
                         .queryParam("key", props.key())
                         .queryParam("q", city)
@@ -47,32 +48,34 @@ public class WeatherApiClientImpl implements WeatherApiClient {
                         .build())
                 .retrieve()
                 .onStatus(s -> s.value() == 429, r ->
-                        r.bodyToMono(String.class).map(body -> new GlobalException(WeatherErrorCode.RATE_LIMITED)))
-                .onStatus(HttpStatusCode::is4xxClientError, r ->
-                        r.bodyToMono(String.class).map(body -> new GlobalException(WeatherErrorCode.INVALID_CITY)))
-                .onStatus(HttpStatusCode::is5xxServerError, r ->
                         r.bodyToMono(String.class)
-                                .map(body -> new GlobalException(WeatherErrorCode.EXTERNAL_UNAVAILABLE)))
+                                .flatMap(body -> Mono.error(new GlobalException(WeatherErrorCode.RATE_LIMITED))))
+                .onStatus(HttpStatusCode::is4xxClientError, r ->
+                        r.bodyToMono(String.class)
+                                .flatMap(body -> Mono.error(new GlobalException(WeatherErrorCode.INVALID_CITY))))
+                .onStatus(HttpStatusCode::is5xxServerError, r ->
+                        r.bodyToMono(String.class).flatMap(
+                                body -> Mono.error(new GlobalException(WeatherErrorCode.EXTERNAL_UNAVAILABLE))))
                 .bodyToMono(WeatherApiResponse.class)
-                .block();
+                .map(response -> {
+                    if (response == null || response.forecast() == null || response.forecast().forecastday() == null) {
+                        throw new GlobalException(WeatherErrorCode.PARSE_FAILED);
+                    }
 
-        if (response == null || response.forecast() == null || response.forecast().forecastday() == null) {
-            throw new GlobalException(WeatherErrorCode.PARSE_FAILED);
-        }
-
-        var list = new ArrayList<Daily>();
-        for (var fd : response.forecast().forecastday()) {
-            LocalDate d0 = LocalDate.parse(fd.date());
-            if (!d0.isBefore(start) && !d0.isAfter(end)) {
-                var d = fd.day();
-                list.add(new Daily(
-                        d.avgTempC(),
-                        d.avgHumidity(),
-                        d.dailyChanceOfRain(),
-                        d.condition() != null ? d.condition().text() : null
-                ));
-            }
-        }
-        return list;
+                    var list = new ArrayList<Daily>();
+                    for (var fd : response.forecast().forecastday()) {
+                        LocalDate d0 = LocalDate.parse(fd.date());
+                        if (!d0.isBefore(start) && !d0.isAfter(end)) {
+                            var d = fd.day();
+                            list.add(new Daily(
+                                    d.avgTempC(),
+                                    d.avgHumidity(),
+                                    d.dailyChanceOfRain(),
+                                    d.condition() != null ? d.condition().text() : null
+                            ));
+                        }
+                    }
+                    return list;
+                });
     }
 }
