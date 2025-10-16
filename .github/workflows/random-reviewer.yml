@@ -2,7 +2,7 @@ name: Assign Random Reviewer
 
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review]
+    types: [ opened, reopened, ready_for_review ]
 
 permissions:
   contents: read
@@ -23,7 +23,7 @@ jobs:
             const prNum = context.payload.pull_request.number;
             const author = context.payload.pull_request.user.login;
 
-            const reviewers = ["csy10001","desembers","jihoLee0818","youngrae0317","HY-WG"];
+            const reviewers = ["csy10001","jihoLee0818","youngrae0317","HY-WG"];
 
             const deny = new Set([author, "dependabot[bot]", "github-actions[bot]"]);
 
