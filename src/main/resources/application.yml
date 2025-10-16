@@ -4,7 +4,6 @@ spring:
 
   profiles:
     active: docker
-
   jpa:
     open-in-view: false
     hibernate:
@@ -13,13 +12,34 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+        provider:
+          google:
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
 
-  output:
-    ansi:
-      enabled: always
+jwt:
+  secret: ${JWT_SECRET}
+  access-expiration: 3600000  # 1시간 (ms)
 
 logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+
+weatherapi:
+  base-url: https://api.weatherapi.com/v1
+  key: ${WEATHER_API_KEY}   # .env 또는 서버 환경변수로 주입
+
+app:
+  oauth:
+    redirect-uri: http://localhost:3000/login/success
