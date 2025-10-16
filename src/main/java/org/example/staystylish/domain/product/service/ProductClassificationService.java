@@ -1,5 +1,7 @@
 package org.example.staystylish.domain.product.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.staystylish.domain.product.dto.request.ProductClassificationRequest;
 import org.example.staystylish.domain.product.dto.response.ProductClassificationResponse;
 import org.springframework.ai.chat.ChatClient;
@@ -13,6 +15,7 @@ import java.util.Map;
 public class ProductClassificationService {
 
     private final ChatClient chatClient;
+    private final ObjectMapper objectMapper;
 
     private final String promptTemplate = """
             ### 역할 및 규칙 ###
@@ -33,9 +36,9 @@ public class ProductClassificationService {
             [출력]:
             """;
 
-    public ProductClassificationService(ChatClient chatClient) {
-
+    public ProductClassificationService(ChatClient chatClient, ObjectMapper objectMapper) {
         this.chatClient = chatClient;
+        this.objectMapper = objectMapper;
     }
 
     public ProductClassificationResponse classify(ProductClassificationRequest request) {
@@ -43,11 +46,12 @@ public class ProductClassificationService {
         PromptTemplate template = new PromptTemplate(promptTemplate);
         Prompt prompt = template.create(Map.of("productName", request.productName()));
 
-        // AI 응답을 임시로 String으로 받음 (실제로는 JSON 파싱 필요)
         String response = chatClient.call(prompt).getResult().getOutput().getContent();
-
-        // TODO: JSON 문자열을 ProductClassificationResponse 객체로 변환하는 로직 필요(현재는 하드코딩된 임시 객체를 반환)
-        System.out.println("AI Response: " + response);
-        return new ProductClassificationResponse("임시 카테고리", "임시 서브카테고리", java.util.List.of("임시 태그"));
+        
+        try {
+            return objectMapper.readValue(response, ProductClassificationResponse.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("AI 응답을 파싱하는 데 실패했습니다.", e);
+        }
     }
 }
