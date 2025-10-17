@@ -38,12 +38,12 @@ class WeatherApiClientImplTest {
         var list = client.getDailyForecast("Seoul", start, end);
 
         // 콘솔 출력
-        list.forEach(d ->
+        list.block().forEach(d ->
                 System.out.printf("avgTempC=%.1f°C, avgHumidity=%.1f%%, rainChance=%d%%, condition=%s%n",
                         d.avgTempC(), d.avgHumidity(), d.rainChance(), d.conditionText())
         );
 
-        assertThat(list).isNotEmpty();
+        assertThat(list.block()).isNotEmpty();
     }
 }
 
