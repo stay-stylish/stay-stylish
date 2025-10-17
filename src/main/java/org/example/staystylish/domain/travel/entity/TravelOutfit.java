@@ -1,5 +1,6 @@
 package org.example.staystylish.domain.travel.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +12,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.staystylish.common.entity.BaseEntity;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "travel_outfit_recommendation")
@@ -44,17 +47,19 @@ public class TravelOutfit extends BaseEntity {
 
     private String condition;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private String culturalConstraintsJson;
+    private JsonNode culturalConstraintsJson;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private String aiOutfitJson;
+    private JsonNode aiOutfitJson;
 
     private TravelOutfit(Long userId, String country, String city,
                          LocalDate startDate, LocalDate endDate,
                          Double avgTemperature, Integer avgHumidity,
                          Integer rainProbability, String condition,
-                         String culturalConstraintsJson, String aiOutfitJson) {
+                         JsonNode culturalConstraintsJson, JsonNode aiOutfitJson) {
         this.userId = userId;
         this.country = country;
         this.city = city;
@@ -72,7 +77,7 @@ public class TravelOutfit extends BaseEntity {
                                       LocalDate startDate, LocalDate endDate,
                                       Double avgTemperature, Integer avgHumidity,
                                       Integer rainProbability, String condition,
-                                      String culturalConstraintsJson, String aiOutfitJson) {
+                                      JsonNode culturalConstraintsJson, JsonNode aiOutfitJson) {
         return new TravelOutfit(userId, country, city, startDate, endDate,
                 avgTemperature, avgHumidity, rainProbability, condition,
                 culturalConstraintsJson, aiOutfitJson);
