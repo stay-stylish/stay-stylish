@@ -8,6 +8,7 @@ import org.example.staystylish.domain.community.exception.CommunityErrorCode;
 import org.example.staystylish.domain.community.exception.CommunityException;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.user.entity.User;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,11 +40,9 @@ public class PostService {
 
     // 게시글 전체 조회
     @Transactional(readOnly = true)
-    public List<PostResponse> getAllPosts() {
-        return postRepository.findAll()
-                .stream()
-                .map(PostResponse::from)
-                .toList();
+    public Page<PostResponse> getAllPosts(org.springframework.data.domain.Pageable pageable) {
+        return postRepository.findAll(pageable)
+                .map(PostResponse::from);
     }
 
     // 게시글 수정

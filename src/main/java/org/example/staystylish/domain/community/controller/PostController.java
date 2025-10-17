@@ -8,6 +8,9 @@ import org.example.staystylish.domain.community.dto.request.PostRequest;
 import org.example.staystylish.domain.community.dto.response.PostResponse;
 import org.example.staystylish.domain.community.exception.CommunitySuccessCode;
 import org.example.staystylish.domain.community.service.PostService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,8 +36,12 @@ public class PostController {
     }
 
     @GetMapping
-    public ApiResponse<List<PostResponse>> getAllPosts() {
-        return ApiResponse.of(CommunitySuccessCode.POST_LIST_GET_SUCCESS, postService.getAllPosts());
+    public ApiResponse<Page<PostResponse>> getAllPosts(
+            @PageableDefault(page = 0, size = 10) Pageable pageable) {
+        return ApiResponse.of(
+                CommunitySuccessCode.POST_GET_SUCCESS,
+                postService.getAllPosts(pageable)
+        );
     }
 
     @PutMapping("/{postId}")

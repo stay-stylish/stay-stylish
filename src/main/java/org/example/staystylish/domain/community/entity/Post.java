@@ -39,6 +39,9 @@ public class Post extends BaseEntity {
     @Builder.Default
     private int shareCount = 0;
 
+    @Version
+    private Long version;
+
     private LocalDateTime deletedAt;
 
     public void update(String title, String content) {
