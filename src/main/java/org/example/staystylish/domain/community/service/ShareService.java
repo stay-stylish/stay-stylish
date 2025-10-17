@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.example.staystylish.domain.community.dto.response.ShareResponse;
 import org.example.staystylish.domain.community.entity.Post;
 import org.example.staystylish.domain.community.entity.Share;
+import org.example.staystylish.domain.community.exception.CommunityErrorCode;
+import org.example.staystylish.domain.community.exception.CommunityException;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.community.repository.ShareRepository;
 import org.example.staystylish.domain.user.entity.User;
@@ -20,16 +22,20 @@ public class ShareService {
     @Transactional
     public ShareResponse sharePost(User user, Long postId, String platform) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new CommunityException(CommunityErrorCode.POST_NOT_FOUND));
+
+        if (platform == null || platform.isBlank()) {
+            throw new CommunityException(CommunityErrorCode.INVALID_PLATFORM);
+        }
 
         shareRepository.save(Share.builder()
                 .post(post)
                 .user(user)
-                .platform(platform)
+                .platform(platform.toUpperCase())
                 .build());
 
         post.increaseShare();
-        return ShareResponse.of(post.getId(), platform, post.getShareCount());
+        return ShareResponse.of(post.getId(), platform.toUpperCase(), post.getShareCount());
     }
 }
 
