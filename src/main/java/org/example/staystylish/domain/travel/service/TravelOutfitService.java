@@ -13,10 +13,10 @@ import org.example.staystylish.domain.travel.ai.TravelAiClient;
 import org.example.staystylish.domain.travel.ai.TravelAiPromptBuilder;
 import org.example.staystylish.domain.travel.consts.TravelOutfitErrorCode;
 import org.example.staystylish.domain.travel.dto.request.TravelOutfitRequest;
+import org.example.staystylish.domain.travel.dto.response.AiTravelJson;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.AiOutfit;
 import org.example.staystylish.domain.travel.entity.TravelOutfit;
-import org.example.staystylish.domain.travel.policy.TravelCultureGuide;
 import org.example.staystylish.domain.travel.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.example.staystylish.domain.weather.client.WeatherApiClient;
@@ -30,7 +30,6 @@ import reactor.core.publisher.Mono;
 public class TravelOutfitService {
 
     private final WeatherApiClient weatherApiClient;
-    private final TravelCultureGuide cultureGuide;
     private final TravelOutfitRepository travelOutfitRepository;
     private final TravelAiClient aiClient;
     private final TravelAiPromptBuilder promptBuilder;
@@ -92,10 +91,6 @@ public class TravelOutfitService {
                 .map(Map.Entry::getKey)
                 .orElse("알 수 없음");
 
-        // 문화 종교 규칙
-        var culturalRules = cultureGuide.rulesFor(request.country());
-        var culturalNotes = cultureGuide.notesFor(request.country());
-
         // Gender ENUM을 한글 문자열 변환
         String userGender = toKorean(gender);
 
@@ -103,25 +98,25 @@ public class TravelOutfitService {
         String prompt = promptBuilder.buildPrompt(
                 request.country(), request.city(),
                 request.startDate(), request.endDate(),
-                userGender, condition, avgTemp, avgRainProb, culturalNotes
+                userGender, condition, avgTemp, avgRainProb
         );
 
         // ai 호출 및 파싱
         String aiJson;
-        AiOutfit aiOutfit;
+        AiTravelJson aiTravelJson;
 
         try {
             aiJson = aiClient.callForJson(prompt); // AI 호출하여 JSON 문자열 받기
-            aiOutfit = aiClient.parse(aiJson); // json 문자열을 파싱해서 객체로 변환
+            aiTravelJson = aiClient.parse(aiJson); // json 문자열을 파싱해서 객체로 변환
         } catch (Exception e) {
             throw new GlobalException(TravelOutfitErrorCode.AI_PARSE_FAILED);
         }
 
         // AI 응답 및 문화 정보 등을 DB에 저장하기 위해서 JsonNode 형태로 변환
+        var aiOutfit = new AiOutfit(aiTravelJson.summary(), aiTravelJson.outfits());
+        var culturalConstraints = aiTravelJson.culturalConstraints();
         var aiNode = objectMapper.valueToTree(aiOutfit);
-        var cultureNode = objectMapper.valueToTree(
-                Map.of("notes", culturalNotes, "rules", culturalRules)
-        );
+        var cultureNode = objectMapper.valueToTree(culturalConstraints);
 
         // 엔티티 생성
         var entity = TravelOutfit.create(userId, request.country(), request.city(),
@@ -140,12 +135,9 @@ public class TravelOutfitService {
                         saved.getRainProbability(),
                         saved.getCondition()
                 ),
-                new TravelOutfitResponse.CulturalConstraints(culturalNotes, culturalRules),
+                culturalConstraints,
                 aiOutfit,
-                List.of(
-                        "기관/종교시설 방문 시 드레스코드 사전 확인 권장",
-                        "출발 직전 최신 기상 예보 재확인"
-                ),
+                aiTravelJson.safetyNotes(),
                 saved.getCreatedAt()
         );
     }
