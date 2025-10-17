@@ -1,5 +1,6 @@
 package org.example.staystylish.domain.travel.dto.response;
 
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,14 +15,14 @@ public record TravelOutfitResponse(
         LocalDate endDate,
         WeatherSummary weatherSummary,
         CulturalConstraints culturalConstraints,
-        AiOutfitPayload aiOutfitJson,
+        AiOutfit aiOutfitJson,
         List<String> safetyNotes,
         LocalDateTime createdAt
 ) {
     public static TravelOutfitResponse from(TravelOutfit travelOutfit,
                                             WeatherSummary summary,
                                             CulturalConstraints constraints,
-                                            AiOutfitPayload ai,
+                                            AiOutfit ai,
                                             List<String> notes) {
         return new TravelOutfitResponse(
                 travelOutfit.getId(), travelOutfit.getUserId(), travelOutfit.getCountry(), travelOutfit.getCity(),
@@ -39,7 +40,7 @@ public record TravelOutfitResponse(
             String notes, List<String> rules) {
     }
 
-    public record AiOutfitPayload(
+    public record AiOutfit(
             String summary, List<OutfitSet> outfits) {
 
         public record OutfitSet(

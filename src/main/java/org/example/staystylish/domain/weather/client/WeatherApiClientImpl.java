@@ -45,6 +45,7 @@ public class WeatherApiClientImpl implements WeatherApiClient {
                         .queryParam("days", days)
                         .queryParam("aqi", "no")
                         .queryParam("alerts", "no")
+                        .queryParam("lang", "ko")
                         .build())
                 .retrieve()
                 .onStatus(s -> s.value() == 429, r ->
