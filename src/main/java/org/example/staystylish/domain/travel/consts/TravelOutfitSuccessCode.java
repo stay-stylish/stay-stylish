@@ -1,0 +1,15 @@
+package org.example.staystylish.domain.travel.consts;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.example.staystylish.common.consts.SuccessCode;
+import org.springframework.http.HttpStatus;
+
+@Getter
+@RequiredArgsConstructor
+public enum TravelOutfitSuccessCode implements SuccessCode {
+    CREATED(HttpStatus.CREATED, "여행 옷차림 추천 생성 완료 되었습니다.");
+
+    private final HttpStatus httpStatus;
+    private final String message;
+}
