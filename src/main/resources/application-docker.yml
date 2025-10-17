@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://db:5432/${DB_NAME}
+    url: jdbc:postgresql://postgres-db:5432/${DB_NAME}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
@@ -16,7 +16,7 @@ spring:
 
   data:
     redis:
-      host: redis
+      host: redis-cache
       port: 6379
       password: ${REDIS_PASSWORD}
 
@@ -33,6 +33,16 @@ spring:
         provider:
           google:
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+
+  ai:
+    vertex:
+      ai:
+        gemini:
+          project-id: ${GOOGLE_PROJECT_ID}
+          location: us-central1
+          chat:
+            options:
+              model: gemini-2.5-pro
 
 jwt:
   secret: ${JWT_SECRET}

@@ -4,12 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.staystylish.domain.product.dto.request.ProductClassificationRequest;
 import org.example.staystylish.domain.product.dto.response.ProductClassificationResponse;
-import org.springframework.ai.chat.ChatClient;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 public class ProductClassificationService {
@@ -17,7 +13,8 @@ public class ProductClassificationService {
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
 
-    private final String promptTemplate = """
+    // 시스템 지시사항 부분
+    private final String systemPrompt = """
             ### 역할 및 규칙 ###
             너는 패션 상품 데이터를 분석하고 구조화하는 전문 데이터 분석가(조교)다.
             주어진 상품 정보를 분석하여 'category', 'sub_category', 'style_tags'를 포함한 JSON 객체로 출력해야 한다.
@@ -30,26 +27,35 @@ public class ProductClassificationService {
             
             [입력]: "쿨맥스 와이드 밴딩 슬랙스"
             [출력]: { "category": "하의", "sub_category": "슬랙스", "style_tags": ["미니멀", "포멀"] }
-            
-            ### 실제 과제 ###
-            [입력]: "{productName}"
-            [출력]:
             """;
 
-    public ProductClassificationService(ChatClient chatClient, ObjectMapper objectMapper) {
-        this.chatClient = chatClient;
+    public ProductClassificationService(ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper) {
+        this.chatClient = chatClientBuilder.build();
         this.objectMapper = objectMapper;
     }
 
     public ProductClassificationResponse classify(ProductClassificationRequest request) {
 
-        PromptTemplate template = new PromptTemplate(promptTemplate);
-        Prompt prompt = template.create(Map.of("productName", request.productName()));
+        // 사용자 요청 부분
+        String userMessage = "### 실제 과제 ###\\n[입력]: \"" + request.productName() + "\"\\n[출력]:";
 
-        String response = chatClient.call(prompt).getResult().getOutput().getContent();
-        
+        // 시스템, 사용자 요청을 구분하여 AI 호출
+        String response = chatClient.prompt()
+                .system(systemPrompt)
+                .user(userMessage)
+                .call()
+                .content();
+
+        // AI 응답에서 JSON 부분만 추출
+        int startIndex = response.indexOf('{');
+        int endIndex = response.lastIndexOf('}');
+        String jsonResponse = response;
+        if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+            jsonResponse = response.substring(startIndex, endIndex + 1);
+        }
+
         try {
-            return objectMapper.readValue(response, ProductClassificationResponse.class);
+            return objectMapper.readValue(jsonResponse, ProductClassificationResponse.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("AI 응답을 파싱하는 데 실패했습니다.", e);
         }
