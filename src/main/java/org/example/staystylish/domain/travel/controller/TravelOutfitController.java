@@ -61,7 +61,7 @@ public class TravelOutfitController {
         Page<TravelOutfitSummaryResponse> responsePage =
                 travelOutfitService.getMyRecommendationsSummary(userId, pageable);
 
-        return ApiResponse.of(TravelOutfitSuccessCode.OUTFIT_SUCCESS_CODE, PageResponse.fromPage(responsePage));
+        return ApiResponse.of(TravelOutfitSuccessCode.GET_RECOMMENDATIONS_SUCCESS, PageResponse.fromPage(responsePage));
     }
 
 }

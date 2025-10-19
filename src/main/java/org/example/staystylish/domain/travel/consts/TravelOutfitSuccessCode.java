@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum TravelOutfitSuccessCode implements SuccessCode {
     CREATED(HttpStatus.CREATED, "여행 옷차림 추천 생성 완료 되었습니다."),
-    OUTFIT_SUCCESS_CODE(HttpStatus.OK, "여행 옷차림 추천 목록 조회 성공");
+    GET_RECOMMENDATIONS_SUCCESS(HttpStatus.OK, "여행 옷차림 추천 목록 조회 성공");
 
     private final HttpStatus httpStatus;
     private final String message;
