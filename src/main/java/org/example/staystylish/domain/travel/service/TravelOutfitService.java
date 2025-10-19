@@ -16,11 +16,14 @@ import org.example.staystylish.domain.travel.dto.request.TravelOutfitRequest;
 import org.example.staystylish.domain.travel.dto.response.AiTravelJson;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.AiOutfit;
+import org.example.staystylish.domain.travel.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.travel.entity.TravelOutfit;
 import org.example.staystylish.domain.travel.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.example.staystylish.domain.weather.client.WeatherApiClient;
 import org.example.staystylish.domain.weather.client.WeatherApiClient.Daily;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -140,6 +143,14 @@ public class TravelOutfitService {
                 aiTravelJson.safetyNotes(),
                 saved.getCreatedAt()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TravelOutfitSummaryResponse> getMyRecommendationsSummary(Long userId, Pageable pageable) {
+
+        Page<TravelOutfit> page = travelOutfitRepository.findByUserId(userId, pageable);
+
+        return page.map(TravelOutfitSummaryResponse::from);
     }
 
     private String toKorean(Gender gender) {
