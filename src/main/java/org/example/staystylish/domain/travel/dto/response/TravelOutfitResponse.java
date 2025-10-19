@@ -1,0 +1,54 @@
+package org.example.staystylish.domain.travel.dto.response;
+
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import org.example.staystylish.domain.travel.entity.TravelOutfit;
+
+public record TravelOutfitResponse(
+        Long travelId,
+        Long userId,
+        String country,
+        String city,
+        LocalDate startDate,
+        LocalDate endDate,
+        WeatherSummary weatherSummary,
+        CulturalConstraints culturalConstraints,
+        AiOutfit aiOutfitJson,
+        List<String> safetyNotes,
+        LocalDateTime createdAt
+) {
+    public static TravelOutfitResponse from(TravelOutfit travelOutfit,
+                                            WeatherSummary summary,
+                                            CulturalConstraints constraints,
+                                            AiOutfit ai,
+                                            List<String> notes) {
+        return new TravelOutfitResponse(
+                travelOutfit.getId(), travelOutfit.getUserId(), travelOutfit.getCountry(), travelOutfit.getCity(),
+                travelOutfit.getStartDate(), travelOutfit.getEndDate(), summary, constraints, ai, notes,
+                travelOutfit.getCreatedAt()
+        );
+    }
+
+    public record WeatherSummary(
+            Double avgTemperature, Integer avgHumidity,
+            Integer rainProbability, String condition) {
+    }
+
+    public record CulturalConstraints(
+            String notes, List<String> rules) {
+    }
+
+    public record AiOutfit(
+            String summary, List<OutfitSet> outfits) {
+
+        public record OutfitSet(
+                Integer setNo, String reason, List<Item> items) {
+        }
+
+        public record Item(
+                String slot, String item, String styleTag) {
+        }
+    }
+}

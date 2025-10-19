@@ -8,7 +8,6 @@ import org.example.staystylish.common.consts.ErrorCode;
 import org.example.staystylish.common.dto.response.ApiResponse;
 import org.example.staystylish.common.dto.response.ApiResponse.ValidationError;
 import org.example.staystylish.common.exception.GlobalException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
