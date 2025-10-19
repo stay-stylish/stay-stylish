@@ -1,4 +1,5 @@
-package org.example.staystylish.weather.dto;
+package org.example.staystylish.localweather.dto;
 
-public record WeatherRequest() {
-}
+import java.util.Map;
+
+public record WeatherRequest(String rawJson, Map<String, Object> parsed) {}
