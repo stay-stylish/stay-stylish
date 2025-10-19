@@ -68,3 +68,13 @@ logging:
 weatherapi:
   base-url: https://api.weatherapi.com/v1
   key: ${WEATHER_API_KEY}
+
+server:
+  port: 8080
+
+kma:
+  # 기본값은 사용하지 말고 운영체제 환경변수로 설정하세요.
+  serviceKey: ${KMA_SERVICE_KEY}
+  baseUrl: http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0  # 동네예보조회서비스 Call Back URL
+
+#https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst=${API_KEY}&pageNo=1&numOfRows=1000&dataType=JSON&base_date{BASE_DATE}&base_time=${BASE_TIME}&base_time=${BASE_TIME}&nx=${NX}&ny=${NY}`;

@@ -1,4 +1,4 @@
-package org.example.staystylish.weather.entity;
+package org.example.staystylish.localweather.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
