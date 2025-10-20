@@ -117,5 +117,6 @@ class PostServiceTest {
 
         // then
         assertThat(response.title()).isEqualTo("수정 제목");
+        assertThat(response.content()).isEqualTo("수정 내용");
     }
 }
