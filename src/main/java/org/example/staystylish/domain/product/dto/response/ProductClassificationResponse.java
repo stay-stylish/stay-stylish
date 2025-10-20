@@ -1,5 +1,7 @@
 package org.example.staystylish.domain.product.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 /**
@@ -8,7 +10,9 @@ import java.util.List;
  */
 public record ProductClassificationResponse(
         String category,
-        String sub_category,
-        List<String> style_tags
+        @JsonProperty("sub_category")
+        String subCategory,
+        @JsonProperty("style_tags")
+        List<String> styleTags
 ) {
 }

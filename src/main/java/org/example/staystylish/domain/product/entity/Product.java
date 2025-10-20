@@ -30,4 +30,5 @@ public class Product {
         // 유효성 검증, 초기 상태 설정, 기본값 부여는 정적 팩토리 내부에서 수행
         // 현재는 name만 있으므로 간단하게 처리
         return new Product(name);
-    }}
+    }
+}
