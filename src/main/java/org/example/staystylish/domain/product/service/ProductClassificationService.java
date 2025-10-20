@@ -7,6 +7,10 @@ import org.example.staystylish.domain.product.dto.response.ProductClassification
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
+/**
+ * 상품 분류와 관련된 비즈니스 로직을 처리하는 서비스 클래스입니다.
+ * AI 모델을 활용하여 상품명을 분석하고 분류 결과를 반환합니다.
+ */
 @Service
 public class ProductClassificationService {
 
@@ -55,7 +59,9 @@ public class ProductClassificationService {
         }
 
         try {
-            return objectMapper.readValue(jsonResponse, ProductClassificationResponse.class);
+            ProductClassificationResponse classificationResponse = objectMapper.readValue(jsonResponse, ProductClassificationResponse.class);
+
+            return classificationResponse;
         } catch (JsonProcessingException e) {
             throw new RuntimeException("AI 응답을 파싱하는 데 실패했습니다.", e);
         }
