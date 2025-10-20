@@ -13,6 +13,8 @@ import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.example.staystylish.domain.weather.client.WeatherApiClient;
 import org.springframework.ai.chat.client.ChatClient;
+import org.example.staystylish.domain.user.exception.UserException;
+import org.example.staystylish.domain.user.exception.UserErrorCode;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +53,7 @@ public class OutfitService {
     public OutfitRecommendationResponse getOutfitRecommendation(Long userId) {
         // 1. 사용자 정보 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         // 2. 날씨 정보 조회
         String location = StringUtils.hasText(user.getRegion()) ? user.getRegion() : "Seoul";
@@ -150,7 +152,7 @@ public class OutfitService {
             LikeStatus likeStatus
     ) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         Product product = productRepository.findById(itemId)
                 .orElseThrow(() -> new ItemNotFoundException("피드백할 아이템을 찾을 수 없습니다."));

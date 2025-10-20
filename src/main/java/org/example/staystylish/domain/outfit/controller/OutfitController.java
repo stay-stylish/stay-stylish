@@ -2,6 +2,9 @@ package org.example.staystylish.domain.outfit.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.domain.outfit.dto.response.OutfitRecommendationResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.example.staystylish.common.security.UserPrincipal;
+import org.example.staystylish.domain.outfit.dto.request.FeedbackRequest;
 import org.example.staystylish.domain.outfit.enums.LikeStatus;
 import org.example.staystylish.domain.outfit.service.OutfitService;
 import org.springframework.http.HttpStatus;
@@ -21,45 +24,38 @@ public class OutfitController {
     private final OutfitService outfitService;
 
     @GetMapping("/recommendation")
-    public ResponseEntity<OutfitRecommendationResponse> getOutfitRecommendation() {
-        Long userId = getUserId();
+    public ResponseEntity<OutfitRecommendationResponse> getOutfitRecommendation(@AuthenticationPrincipal UserPrincipal principal) {
+        Long userId = principal.getUser().getId();
         OutfitRecommendationResponse response = outfitService.getOutfitRecommendation(userId);
         return ResponseEntity.ok(response);
     }
 
-    // 현재 사용자 ID를 시큐리티 컨텍스트에서 가져오는 임시 메서드
-    private Long getUserId() {
-        // 실제 애플리케이션에서는 아래와 같이 Spring Security 컨텍스트에서 사용자 정보를 가져와야 합니다.
-        // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // return ((YourUserDetails) authentication.getPrincipal()).getId();
-        return 1L; // 지금은 임시로 고정된 ID를 사용합니다.
+
+    @PostMapping("/items/{itemId}/feedback")
+    public ResponseEntity<Map<String, String>> handleFeedback(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long itemId, @RequestBody FeedbackRequest request) {
+        Long userId = principal.getUser().getId();
+        if (request.status() == LikeStatus.LIKE) {
+            outfitService.addFeedback(userId, itemId, LikeStatus.LIKE);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "피드백이 성공적으로 저장되었습니다."));
+        } else if (request.status() == LikeStatus.DISLIKE) {
+            outfitService.addFeedback(userId, itemId, LikeStatus.DISLIKE);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "피드백이 성공적으로 저장되었습니다."));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "유효하지 않은 피드백 상태입니다."));
+        }
     }
 
-    @PostMapping("/items/{itemId}/like")
-    public ResponseEntity<Map<String, String>> createLikeFeedback(@PathVariable Long itemId) {
-        Long userId = getUserId();
-        outfitService.addFeedback(userId, itemId, LikeStatus.LIKE);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "피드백이 성공적으로 저장되었습니다."));
-    }
-
-    @DeleteMapping("/items/{itemId}/like")
-    public ResponseEntity<Map<String, String>> deleteLikeFeedback(@PathVariable Long itemId) {
-        Long userId = getUserId();
-        outfitService.removeFeedback(userId, itemId, LikeStatus.LIKE);
-        return ResponseEntity.ok(Map.of("message", "피드백이 취소되었습니다."));
-    }
-
-    @PostMapping("/items/{itemId}/dislike")
-    public ResponseEntity<Map<String, String>> createDislikeFeedback(@PathVariable Long itemId) {
-        Long userId = getUserId();
-        outfitService.addFeedback(userId, itemId, LikeStatus.DISLIKE);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "피드백이 성공적으로 저장되었습니다."));
-    }
-
-    @DeleteMapping("/items/{itemId}/dislike")
-    public ResponseEntity<Map<String, String>> deleteDislikeFeedback(@PathVariable Long itemId) {
-        Long userId = getUserId();
-        outfitService.removeFeedback(userId, itemId, LikeStatus.DISLIKE);
-        return ResponseEntity.ok(Map.of("message", "피드백이 취소되었습니다."));
+    @DeleteMapping("/items/{itemId}/feedback")
+    public ResponseEntity<Map<String, String>> deleteFeedback(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long itemId, @RequestBody FeedbackRequest request) {
+        Long userId = principal.getUser().getId();
+        if (request.status() == LikeStatus.LIKE) {
+            outfitService.removeFeedback(userId, itemId, LikeStatus.LIKE);
+            return ResponseEntity.ok(Map.of("message", "피드백이 취소되었습니다."));
+        } else if (request.status() == LikeStatus.DISLIKE) {
+            outfitService.removeFeedback(userId, itemId, LikeStatus.DISLIKE);
+            return ResponseEntity.ok(Map.of("message", "피드백이 취소되었습니다."));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "유효하지 않은 피드백 상태입니다."));
+        }
     }
 }
