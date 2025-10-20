@@ -14,14 +14,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.travel.ai.TravelAiClient;
 import org.example.staystylish.domain.travel.ai.TravelAiPromptBuilder;
 import org.example.staystylish.domain.travel.consts.TravelOutfitErrorCode;
 import org.example.staystylish.domain.travel.dto.request.TravelOutfitRequest;
 import org.example.staystylish.domain.travel.dto.response.AiTravelJson;
+import org.example.staystylish.domain.travel.dto.response.TravelOutfitDetailResponse;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.CulturalConstraints;
+import org.example.staystylish.domain.travel.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.travel.entity.TravelOutfit;
 import org.example.staystylish.domain.travel.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
@@ -33,6 +36,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +52,11 @@ class TravelOutfitServiceTest {
     private final String COUNTRY = "일본";
     private final String CITY = "Tokyo";
     private final Gender GENDER = Gender.MALE;
+    private final JsonNode mockJsonNode = new ObjectMapper().createObjectNode();
+    private final TravelOutfit mockOutfit = TravelOutfit.create(
+            USER_ID, COUNTRY, CITY, START_DATE, END_DATE,
+            20.0, 60, 10, "맑음", mockJsonNode, mockJsonNode
+    );
     @Mock
     TravelAiClient aiClient;
     @InjectMocks // 실제 테스트 대상
@@ -58,6 +70,9 @@ class TravelOutfitServiceTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    /**
+     * 여행 옷차림 추천 요청 API 테스트 코드
+     */
     @Test
     @DisplayName("여행 옷차림 추천 생성 성공")
     void createRecommendation_Success() {
@@ -163,5 +178,59 @@ class TravelOutfitServiceTest {
                 .hasMessage(TravelOutfitErrorCode.AI_PARSE_FAILED.getMessage());
     }
 
+    /**
+     * 추천 기록 목록 조회 테스트 코드
+     */
+    @Test
+    @DisplayName("나의 추천 기록 목록 조회 성공")
+    void getMyRecommendations_Success() {
 
+        // given
+        Pageable pageable = PageRequest.of(0, 5);
+
+        Page<TravelOutfit> responsePage = new PageImpl<>(List.of(mockOutfit), pageable, 1);
+        when(travelOutfitRepository.findByUserId(USER_ID, pageable)).thenReturn(responsePage);
+
+        // when
+        Page<TravelOutfitSummaryResponse> result = travelOutfitService.getMyRecommendationsSummary(USER_ID, pageable);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).city()).isEqualTo(CITY);
+    }
+
+    /**
+     * 추천 기록 단건 상세 조회 테스트 코드
+     */
+    @Test
+    @DisplayName("추천 기록 단건 상세 조회 성공")
+    void getRecommendationDetail_Success() {
+
+        // given
+        when(travelOutfitRepository.findByIdAndUserId(TRAVEL_ID, USER_ID))
+                .thenReturn(Optional.of(mockOutfit));
+
+        // when
+        TravelOutfitDetailResponse response = travelOutfitService.getRecommendationDetail(USER_ID, TRAVEL_ID);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.travelId()).isEqualTo(mockOutfit.getId());
+        assertThat(response.city()).isEqualTo(mockOutfit.getCity());
+    }
+
+    @Test
+    @DisplayName("존재 하지 않은 추천 기록 또는 권한이 없는 추천 기록 상세 조회 시 실패")
+    void getRecommendationDetail_Fail_Not_Found() {
+
+        // given
+        when(travelOutfitRepository.findByIdAndUserId(TRAVEL_ID, USER_ID))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> travelOutfitService.getRecommendationDetail(USER_ID, TRAVEL_ID))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage(TravelOutfitErrorCode.RECOMMENDATION_NOT_FOUND.getMessage());
+    }
 }
