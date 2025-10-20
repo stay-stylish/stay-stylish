@@ -57,8 +57,8 @@ class OutfitControllerTest {
         User userToSave = User.builder().email("test@example.com").password("password").nickname("tester").build();
         testUser = userRepository.save(userToSave);
 
-        product1 = productRepository.save(new Product("Test Shirt"));
-        product2 = productRepository.save(new Product("Test Pants"));
+        product1 = productRepository.save(Product.create("Test Shirt"));
+        product2 = productRepository.save(Product.create("Test Pants"));
     }
 
     @Test
@@ -79,7 +79,7 @@ class OutfitControllerTest {
     @DisplayName("시나리오 2: 아이템 좋아요 취소")
     void testUnlikeItem() throws Exception {
         // 준비
-        UserItemFeedback initialFeedback = UserItemFeedback.builder().user(testUser).product(product1).likeStatus(LikeStatus.LIKE).build();
+        UserItemFeedback initialFeedback = UserItemFeedback.create(testUser, product1, LikeStatus.LIKE);
         userItemFeedbackRepository.save(initialFeedback);
 
         // 실행
@@ -87,7 +87,7 @@ class OutfitControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("피드백이 취소되었습니다."));
 
-        // then
+        // 검증
         Optional<UserItemFeedback> feedback = userItemFeedbackRepository.findByUserIdAndProductId(testUser.getId(), product1.getId());
         assertThat(feedback).isNotPresent();
     }
@@ -110,7 +110,7 @@ class OutfitControllerTest {
     @DisplayName("시나리오 4: 아이템 싫어요 취소")
     void testUndislikeItem() throws Exception {
         // 준비
-        UserItemFeedback initialFeedback = UserItemFeedback.builder().user(testUser).product(product2).likeStatus(LikeStatus.DISLIKE).build();
+        UserItemFeedback initialFeedback = UserItemFeedback.create(testUser, product2, LikeStatus.DISLIKE);
         userItemFeedbackRepository.save(initialFeedback);
 
         // 실행
@@ -126,7 +126,7 @@ class OutfitControllerTest {
     @Test
     @DisplayName("시나리오 5: 존재하지 않는 아이템에 피드백")
     void testFeedbackOnNonExistentItem() throws Exception {
-        // when & then
+        // 실행 & 검증
         long nonExistentItemId = 99999L;
         mockMvc.perform(post("/api/v1/outfits/items/{itemId}/like", nonExistentItemId))
                 .andExpect(status().isNotFound());

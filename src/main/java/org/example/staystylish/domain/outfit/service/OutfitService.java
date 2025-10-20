@@ -1,7 +1,7 @@
 package org.example.staystylish.domain.outfit.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.staystylish.domain.outfit.dto.internal.FeedbackInfo;
+import org.example.staystylish.domain.outfit.dto.request.FeedbackInfoRequest;
 import org.example.staystylish.domain.outfit.dto.response.OutfitRecommendationResponse;
 import org.example.staystylish.domain.outfit.entity.UserItemFeedback;
 import org.example.staystylish.domain.outfit.enums.LikeStatus;
@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * 의상 추천과 관련된 비즈니스 로직을 처리하는 서비스 클래스입니다.
+ * 날씨 정보, 사용자 피드백, AI 모델을 활용하여 맞춤형 의상을 추천합니다.
+ */
 @Service
 @Transactional
 public class OutfitService {
@@ -43,6 +47,7 @@ public class OutfitService {
         this.objectMapper = objectMapper;
     }
 
+    @Transactional(readOnly = true)
     public OutfitRecommendationResponse getOutfitRecommendation(Long userId) {
         // 1. 사용자 정보 조회
         User user = userRepository.findById(userId)
@@ -57,9 +62,9 @@ public class OutfitService {
                 .orElse(null);
 
         // 3. 최근 피드백 조회
-        List<FeedbackInfo> recentFeedbacks = userItemFeedbackRepository.findRecentFeedbackByUserId(userId, PageRequest.of(0, 5))
+        List<FeedbackInfoRequest> recentFeedbacks = userItemFeedbackRepository.findRecentFeedbackByUserId(userId, PageRequest.of(0, 5))
                 .stream()
-                .map(feedback -> new FeedbackInfo(feedback.getProduct().getName(), feedback.getLikeStatus().name()))
+                .map(feedback -> new FeedbackInfoRequest(feedback.getProduct().getName(), feedback.getLikeStatus().name()))
                 .collect(Collectors.toList());
 
         // 4. 프롬프트 생성
@@ -81,11 +86,13 @@ public class OutfitService {
             if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
                 jsonResponse = jsonResponse.substring(startIndex, endIndex + 1);
             }
-            return objectMapper.readValue(jsonResponse, OutfitRecommendationResponse.class);
+            OutfitRecommendationResponse response = objectMapper.readValue(jsonResponse, OutfitRecommendationResponse.class);
+            return response;
         } catch (Exception e) {
             // 파싱 실패 시, 대체 응답 반환
             // AI 응답 형식이 잘못된 경우 사용자에게 오류가 표시되지 않도록 방지
-            return new OutfitRecommendationResponse("AI 응답을 처리하는 데 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", List.of());
+            OutfitRecommendationResponse fallbackResponse = OutfitRecommendationResponse.from("AI 응답을 처리하는 데 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", List.of());
+            return fallbackResponse;
         }
     }
 
@@ -100,8 +107,13 @@ public class OutfitService {
                 """;
     }
 
-    private String buildUserPrompt(User user, WeatherApiClient.Daily weather, List<FeedbackInfo> feedbacks) {
+    private String buildUserPrompt(
+            User user,
+            WeatherApiClient.Daily weather,
+            List<FeedbackInfoRequest> feedbacks
+    ) {
         StringBuilder sb = new StringBuilder();
+
         sb.append("### 사용자 및 날씨 정보 ###\n");
 
         // 날씨 데이터
@@ -121,7 +133,7 @@ public class OutfitService {
         // 피드백 데이터
         if (feedbacks != null && !feedbacks.isEmpty()) {
             sb.append("- 최근 피드백:\n");
-            for (FeedbackInfo feedback : feedbacks) {
+            for (FeedbackInfoRequest feedback : feedbacks) {
                 sb.append("  - ").append(feedback.productName()).append(": ").append(feedback.likeStatus()).append("\n");
             }
         }
@@ -132,9 +144,14 @@ public class OutfitService {
         return sb.toString();
     }
 
-    public void addFeedback(Long userId, Long itemId, LikeStatus likeStatus) {
+    public void addFeedback(
+            Long userId,
+            Long itemId,
+            LikeStatus likeStatus
+    ) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         Product product = productRepository.findById(itemId)
                 .orElseThrow(() -> new ItemNotFoundException("피드백할 아이템을 찾을 수 없습니다."));
 
@@ -147,17 +164,17 @@ public class OutfitService {
                     }
                 },
                 () -> {
-                    UserItemFeedback newFeedback = UserItemFeedback.builder()
-                            .user(user)
-                            .product(product)
-                            .likeStatus(likeStatus)
-                            .build();
+                    UserItemFeedback newFeedback = UserItemFeedback.create(user, product, likeStatus);
                     userItemFeedbackRepository.save(newFeedback);
                 }
         );
     }
 
-    public void removeFeedback(Long userId, Long itemId, LikeStatus likeStatus) {
+    public void removeFeedback(
+            Long userId,
+            Long itemId,
+            LikeStatus likeStatus
+    ) {
         userItemFeedbackRepository.findByUserIdAndProductId(userId, itemId)
                 .ifPresent(feedback -> {
                     if (feedback.getLikeStatus() == likeStatus) {

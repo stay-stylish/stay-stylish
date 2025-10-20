@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * UserItemFeedback 엔티티에 대한 데이터 접근을 처리하는 리포지토리 인터페이스입니다.
+ */
 public interface UserItemFeedbackRepository extends JpaRepository<UserItemFeedback, Long> {
 
     Optional<UserItemFeedback> findByUserIdAndProductId(Long userId, Long productId);
