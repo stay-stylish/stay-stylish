@@ -8,7 +8,7 @@ import java.util.List;
  */
 public record ProductClassificationResponse(
         String category,
-        String sub_category,
-        List<String> style_tags
+        @com.fasterxml.jackson.annotation.JsonProperty("sub_category") String subCategory,
+        @com.fasterxml.jackson.annotation.JsonProperty("style_tags") List<String> styleTags
 ) {
 }

@@ -28,7 +28,7 @@ public class OutfitController {
     }
 
     // 현재 사용자 ID를 시큐리티 컨텍스트에서 가져오는 임시 메서드
-    Long getUserId() {
+    private Long getUserId() {
         // 실제 애플리케이션에서는 아래와 같이 Spring Security 컨텍스트에서 사용자 정보를 가져와야 합니다.
         // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // return ((YourUserDetails) authentication.getPrincipal()).getId();
