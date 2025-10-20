@@ -1,7 +1,5 @@
 package org.example.staystylish.domain.product.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 /**
