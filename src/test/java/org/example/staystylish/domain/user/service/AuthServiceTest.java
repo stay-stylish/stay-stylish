@@ -11,7 +11,6 @@ import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -44,7 +43,7 @@ class AuthServiceTest {
     private User user;
 
     @BeforeEach
-    void setUp() {
+    void 유저_세팅() {
         MockitoAnnotations.openMocks(this);
 
         signupRequest = new SignupRequest(
@@ -71,8 +70,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("회원가입 성공 테스트")
-    void signup_success() {
+    void 회원가입_성공_테스트() {
         // given
         given(userRepository.existsByEmail(anyString())).willReturn(false);
         given(passwordEncoder.encode(anyString())).willReturn("encoded_pw");
@@ -88,8 +86,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("회원가입 실패 - 중복 이메일")
-    void signup_fail_duplicateEmail() {
+    void 회원가입_실패_중복_이메일() {
         // given
         given(userRepository.existsByEmail(anyString())).willReturn(true);
 
@@ -100,8 +97,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("로그인 성공 테스트")
-    void login_success() {
+    void 로그인_성공_테스트() {
         // given
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
         given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
@@ -118,8 +114,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("로그인 실패 - 존재하지 않는 사용자")
-    void login_fail_userNotFound() {
+    void 로그인_실패_존재하지_않는_사용자() {
         // given
         given(userRepository.findByEmail(anyString())).willReturn(Optional.empty());
 
@@ -132,8 +127,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("로그인 실패 - 비밀번호 불일치")
-    void login_fail_invalidPassword() {
+    void 로그인_실패_비밀번호_불일치() {
         // given
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
         given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
