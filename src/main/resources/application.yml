@@ -35,6 +35,13 @@ spring:
         provider:
           google:
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.2
 
   ai:
     vertex:

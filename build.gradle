@@ -31,10 +31,13 @@ dependencyManagement {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.3"
         mavenBom "org.springframework.ai:spring-ai-bom:1.0.0"
     }
+    maven { url 'https://repo.spring.io/milestone' }
 }
 
 dependencies {
     implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
+    implementation platform("org.springframework.ai:spring-ai-bom:1.0.0")
+
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -43,6 +46,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    implementation "com.fasterxml.jackson.core:jackson-databind"
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
