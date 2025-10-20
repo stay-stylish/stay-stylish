@@ -1,20 +1,21 @@
 package org.example.staystylish.domain.outfit.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.outfit.dto.request.FeedbackInfoRequest;
 import org.example.staystylish.domain.outfit.dto.response.OutfitRecommendationResponse;
 import org.example.staystylish.domain.outfit.entity.UserItemFeedback;
 import org.example.staystylish.domain.outfit.enums.LikeStatus;
-import org.example.staystylish.domain.outfit.exception.ItemNotFoundException;
+import org.example.staystylish.domain.outfit.exception.OutfitErrorCode;
 import org.example.staystylish.domain.outfit.repository.UserItemFeedbackRepository;
 import org.example.staystylish.domain.product.entity.Product;
 import org.example.staystylish.domain.product.repository.ProductRepository;
 import org.example.staystylish.domain.user.entity.User;
+import org.example.staystylish.domain.user.exception.UserErrorCode;
+import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.example.staystylish.domain.weather.client.WeatherApiClient;
 import org.springframework.ai.chat.client.ChatClient;
-import org.example.staystylish.domain.user.exception.UserException;
-import org.example.staystylish.domain.user.exception.UserErrorCode;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -155,7 +156,7 @@ public class OutfitService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         Product product = productRepository.findById(itemId)
-                .orElseThrow(() -> new ItemNotFoundException("피드백할 아이템을 찾을 수 없습니다."));
+                .orElseThrow(() -> new GlobalException(OutfitErrorCode.ITEM_NOT_FOUND));
 
         Optional<UserItemFeedback> existingFeedback = userItemFeedbackRepository.findByUserIdAndProductId(userId, itemId);
 
