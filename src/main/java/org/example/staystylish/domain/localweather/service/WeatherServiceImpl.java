@@ -25,6 +25,7 @@ import java.util.*;
  * - Redis 캐시에 먼저 조회 후 없으면 API 호출
  * - XML을 Map으로 파싱하여 WeatherItem 리스트 생성
  */
+
 @Service
 public class WeatherServiceImpl implements WeatherService {
 
@@ -52,6 +53,7 @@ public class WeatherServiceImpl implements WeatherService {
     public void init() {
         System.out.println("KMA Service Key = " + serviceKey);
         System.out.println("KMA Base URL = " + baseUrl);
+
     }
 
     /**
@@ -112,11 +114,15 @@ public class WeatherServiceImpl implements WeatherService {
      */
     private WeatherResponse parseWeatherItemsFromXml(String xml, int nx, int ny, String baseDate, String baseTime) {
         List<WeatherItem> items = new ArrayList<>();
+
         try {
-            // ★ 수정됨: Map 대신 JsonNode 트리로 안전하게 파싱
+            // XML을 Jackson 트리로 파싱
             com.fasterxml.jackson.databind.JsonNode root = xmlMapper.readTree(xml);
-            com.fasterxml.jackson.databind.JsonNode response = root.path("response");
-            com.fasterxml.jackson.databind.JsonNode header = response.path("header");
+
+            com.fasterxml.jackson.databind.JsonNode header = root.path("header");
+            com.fasterxml.jackson.databind.JsonNode bodyNode = root.path("body");
+
+            // API 응답 코드 확인
             if (!header.isMissingNode()) {
                 String resultCode = header.path("resultCode").asText();
                 String resultMsg = header.path("resultMsg").asText();
@@ -125,21 +131,24 @@ public class WeatherServiceImpl implements WeatherService {
                 }
             }
 
-            com.fasterxml.jackson.databind.JsonNode itemsNode = response.path("body").path("items").path("item");
-            if (itemsNode.isArray()) { // 다수 item
-                for (com.fasterxml.jackson.databind.JsonNode itemNode : itemsNode) {
-                    items.add(mapToWeatherItemNode(itemNode)); // ★ 수정됨: mapToWeatherItemNode 사용
+            // ✅ item 노드 접근 (body → items → item)
+            com.fasterxml.jackson.databind.JsonNode itemsContainer = bodyNode.path("items");
+            com.fasterxml.jackson.databind.JsonNode itemNodes = itemsContainer.path("item");
+
+            // ✅ item이 배열인지 단일 객체인지 구분하여 처리
+            if (itemNodes.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode itemNode : itemNodes) {
+                    items.add(mapToWeatherItemNode(itemNode));
                 }
-            } else if (itemsNode.isObject()) { // 단일 item
-                items.add(mapToWeatherItemNode(itemsNode)); // ★ 수정됨: mapToWeatherItemNode 사용
+            } else if (itemNodes.isObject()) {
+                items.add(mapToWeatherItemNode(itemNodes));
             } else {
-                System.out.println("itemsNode is missing or unknown type: " + itemsNode);
+                System.out.println("⚠️ No 'item' nodes found in XML body: " + itemsContainer);
             }
 
         } catch (Exception e) {
-            e.printStackTrace(); // 필요 시 로깅
+            e.printStackTrace();
         }
-
         Map<String, Object> meta = Map.of(
                 "nx", nx,
                 "ny", ny,
@@ -157,6 +166,8 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     // Map -> WeatherItem 변환 메서드
+    // 파라미터: node : Jackson이 XML을 트리 구조(JsonNode)로 파싱한 각 <item> 노드
+    // XML → JsonNode → WeatherItem 과정에서 한 노드(item)를 객체로 만드는 역할
     private WeatherItem mapToWeatherItemNode(com.fasterxml.jackson.databind.JsonNode node) {
         return new WeatherItem(
                 node.path("category").asText(),
