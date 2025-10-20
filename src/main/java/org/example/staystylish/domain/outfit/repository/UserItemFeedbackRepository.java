@@ -1,6 +1,6 @@
 package org.example.staystylish.domain.outfit.repository;
 
-import org.example.staystylish.domain.outfit.model.UserItemFeedback;
+import org.example.staystylish.domain.outfit.entity.UserItemFeedback;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

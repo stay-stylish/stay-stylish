@@ -1,9 +1,9 @@
 package org.example.staystylish.domain.outfit.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.domain.outfit.model.LikeStatus;
-import org.example.staystylish.domain.outfit.service.OutfitService;
 import org.example.staystylish.domain.outfit.dto.response.OutfitRecommendationResponse;
+import org.example.staystylish.domain.outfit.enums.LikeStatus;
+import org.example.staystylish.domain.outfit.service.OutfitService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,12 +24,12 @@ public class OutfitController {
         return ResponseEntity.ok(response);
     }
 
-    // Placeholder for getting the current user ID from security context
+    // 현재 사용자 ID를 시큐리티 컨텍스트에서 가져오는 임시 메서드
     Long getCurrentUserId() {
-        // In a real application, this would be retrieved from the Spring Security context, e.g.:
+        // 실제 애플리케이션에서는 아래와 같이 Spring Security 컨텍스트에서 사용자 정보를 가져와야 합니다.
         // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // return ((YourUserDetails) authentication.getPrincipal()).getId();
-        return 1L; // Using a fixed ID for now
+        return 1L; // 지금은 임시로 고정된 ID를 사용합니다.
     }
 
     @PostMapping("/items/{itemId}/like")
