@@ -10,7 +10,6 @@ package org.example.staystylish.domain.localweather.util;
  * 기상청 초단기예보/실황 API는 격자 좌표로만 요청할 수 있음.
  */
 
-//위 수식/상수(XO, YO)는 기상청에서 사용하는 표준값을 사용했습니다.
 public class KmaGridConverter {
 
     // 상수 (기상청 기준)
