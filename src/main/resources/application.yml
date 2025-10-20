@@ -1,18 +1,28 @@
 spring:
-  application:
-    name: stay-stylish
-
   profiles:
-    active: docker
+    active: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
   jpa:
-    open-in-view: false
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: create-drop
     properties:
       hibernate:
-        format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+    open-in-view: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD}
+
   security:
     oauth2:
       client:
@@ -33,10 +43,18 @@ spring:
         options:
           model: gpt-4o-mini
           temperature: 0.2
+    vertex:
+      ai:
+        gemini:
+          project-id: ${GOOGLE_PROJECT_ID}
+          location: us-central1
+          chat:
+            options:
+              model: gemini-2.5-pro
 
 jwt:
   secret: ${JWT_SECRET}
-  access-expiration: 3600000  # 1시간 (ms)
+  access-expiration: 3600000
 
 logging:
   level:
@@ -45,8 +63,4 @@ logging:
 
 weatherapi:
   base-url: https://api.weatherapi.com/v1
-  key: ${WEATHER_API_KEY}   # .env 또는 서버 환경변수로 주입
-
-app:
-  oauth:
-    redirect-uri: http://localhost:3000/login/success
+  key: ${WEATHER_API_KEY}
