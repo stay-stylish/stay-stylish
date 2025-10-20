@@ -1,4 +1,4 @@
-package org.example.staystylish.localweather.config;
+package org.example.staystylish.domain.localweather.config;
 
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
