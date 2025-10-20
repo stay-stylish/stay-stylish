@@ -7,6 +7,7 @@ import org.example.staystylish.common.dto.response.PageResponse;
 import org.example.staystylish.common.security.UserPrincipal;
 import org.example.staystylish.domain.travel.consts.TravelOutfitSuccessCode;
 import org.example.staystylish.domain.travel.dto.request.TravelOutfitRequest;
+import org.example.staystylish.domain.travel.dto.response.TravelOutfitDetailResponse;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.travel.service.TravelOutfitService;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,8 +33,8 @@ public class TravelOutfitController {
     private final TravelOutfitService travelOutfitService;
 
     @PostMapping("/recommendation")
-    public ApiResponse<TravelOutfitResponse> createdRecommendation(@AuthenticationPrincipal UserPrincipal principal,
-                                                                   @Valid @RequestBody TravelOutfitRequest request) {
+    public ApiResponse<TravelOutfitResponse> createRecommendation(@AuthenticationPrincipal UserPrincipal principal,
+                                                                  @Valid @RequestBody TravelOutfitRequest request) {
         // 로그인한 사용자 ID랑 성별 추출
         Long userId = principal.getUser().getId();
         Gender gender = principal.getUser().getGender();
@@ -64,4 +66,16 @@ public class TravelOutfitController {
         return ApiResponse.of(TravelOutfitSuccessCode.GET_RECOMMENDATIONS_SUCCESS, PageResponse.fromPage(responsePage));
     }
 
+    @GetMapping("/recommendation/{travelId}")
+    public ApiResponse<TravelOutfitDetailResponse> getRecommendationDetail(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long travelId
+    ) {
+
+        Long userId = principal.getUser().getId();
+
+        TravelOutfitDetailResponse response = travelOutfitService.getRecommendationDetail(userId, travelId);
+
+        return ApiResponse.of(TravelOutfitSuccessCode.GET_RECOMMENDATION_DETAIL_SUCCESS, response);
+    }
 }

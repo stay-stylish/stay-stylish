@@ -14,6 +14,7 @@ import org.example.staystylish.domain.travel.ai.TravelAiPromptBuilder;
 import org.example.staystylish.domain.travel.consts.TravelOutfitErrorCode;
 import org.example.staystylish.domain.travel.dto.request.TravelOutfitRequest;
 import org.example.staystylish.domain.travel.dto.response.AiTravelJson;
+import org.example.staystylish.domain.travel.dto.response.TravelOutfitDetailResponse;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.AiOutfit;
 import org.example.staystylish.domain.travel.dto.response.TravelOutfitSummaryResponse;
@@ -151,6 +152,15 @@ public class TravelOutfitService {
         Page<TravelOutfit> page = travelOutfitRepository.findByUserId(userId, pageable);
 
         return page.map(TravelOutfitSummaryResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public TravelOutfitDetailResponse getRecommendationDetail(Long userId, Long travelId) {
+
+        TravelOutfit outfit = travelOutfitRepository.findByIdAndUserId(travelId, userId)
+                .orElseThrow(() -> new GlobalException(TravelOutfitErrorCode.RECOMMENDATION_NOT_FOUND));
+
+        return TravelOutfitDetailResponse.from(outfit);
     }
 
     private String toKorean(Gender gender) {
