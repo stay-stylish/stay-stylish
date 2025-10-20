@@ -99,9 +99,6 @@ class TravelOutfitServiceTest {
 
         when(aiClient.parse(expectedAiJson)).thenReturn(aiTravelJson);
 
-        // ObjectMapper Mock
-        JsonNode mockJsonNode = new ObjectMapper().createObjectNode();
-
         when(objectMapper.valueToTree(any(CulturalConstraints.class))).thenReturn(mockJsonNode);
         when(objectMapper.valueToTree(any(TravelOutfitResponse.AiOutfit.class))).thenReturn(mockJsonNode);
 
@@ -183,7 +180,7 @@ class TravelOutfitServiceTest {
      */
     @Test
     @DisplayName("나의 추천 기록 목록 조회 성공")
-    void getMyRecommendations_Success() {
+    void getMyRecommendationsSummary_Success() {
 
         // given
         Pageable pageable = PageRequest.of(0, 5);
