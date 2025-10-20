@@ -5,10 +5,14 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.staystylish.common.entity.BaseEntity;
 import org.example.staystylish.domain.outfit.enums.LikeStatus;
 import org.example.staystylish.domain.product.entity.Product;
 import org.example.staystylish.domain.user.entity.User;
 
+/**
+ * 사용자의 아이템 피드백 정보를 나타내는 엔티티 클래스입니다.
+ */
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -20,10 +24,11 @@ import org.example.staystylish.domain.user.entity.User;
                 )
         }
 )
-public class UserItemFeedback {
+public class UserItemFeedback extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_item_feedback_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -40,12 +45,17 @@ public class UserItemFeedback {
 
     @Builder
     @SuppressWarnings("unused")
-    public UserItemFeedback(User user, Product product, LikeStatus likeStatus) {
+    // private 생성자로 직접 new 생성 방지
+    private UserItemFeedback(User user, Product product, LikeStatus likeStatus) {
         this.user = user;
         this.product = product;
         this.likeStatus = likeStatus;
     }
 
+    // 정적 팩토리 메소드
+    public static UserItemFeedback create(User user, Product product, LikeStatus likeStatus) {
+        return new UserItemFeedback(user, product, likeStatus);
+    }
     public void setLikeStatus(LikeStatus likeStatus) {
         this.likeStatus = likeStatus;
     }

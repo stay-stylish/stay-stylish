@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * 의상 추천 및 아이템 피드백과 관련된 API 요청을 처리하는 컨트롤러 클래스입니다.
+ */
 @RestController
 @RequestMapping("/api/v1/outfits")
 @RequiredArgsConstructor
@@ -19,13 +22,13 @@ public class OutfitController {
 
     @GetMapping("/recommendation")
     public ResponseEntity<OutfitRecommendationResponse> getOutfitRecommendation() {
-        Long userId = getCurrentUserId();
+        Long userId = getUserId();
         OutfitRecommendationResponse response = outfitService.getOutfitRecommendation(userId);
         return ResponseEntity.ok(response);
     }
 
     // 현재 사용자 ID를 시큐리티 컨텍스트에서 가져오는 임시 메서드
-    Long getCurrentUserId() {
+    Long getUserId() {
         // 실제 애플리케이션에서는 아래와 같이 Spring Security 컨텍스트에서 사용자 정보를 가져와야 합니다.
         // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // return ((YourUserDetails) authentication.getPrincipal()).getId();
@@ -33,29 +36,29 @@ public class OutfitController {
     }
 
     @PostMapping("/items/{itemId}/like")
-    public ResponseEntity<Map<String, String>> likeItem(@PathVariable Long itemId) {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<Map<String, String>> createLikeFeedback(@PathVariable Long itemId) {
+        Long userId = getUserId();
         outfitService.addFeedback(userId, itemId, LikeStatus.LIKE);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "피드백이 성공적으로 저장되었습니다."));
     }
 
     @DeleteMapping("/items/{itemId}/like")
-    public ResponseEntity<Map<String, String>> unlikeItem(@PathVariable Long itemId) {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<Map<String, String>> deleteLikeFeedback(@PathVariable Long itemId) {
+        Long userId = getUserId();
         outfitService.removeFeedback(userId, itemId, LikeStatus.LIKE);
         return ResponseEntity.ok(Map.of("message", "피드백이 취소되었습니다."));
     }
 
     @PostMapping("/items/{itemId}/dislike")
-    public ResponseEntity<Map<String, String>> dislikeItem(@PathVariable Long itemId) {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<Map<String, String>> createDislikeFeedback(@PathVariable Long itemId) {
+        Long userId = getUserId();
         outfitService.addFeedback(userId, itemId, LikeStatus.DISLIKE);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "피드백이 성공적으로 저장되었습니다."));
     }
 
     @DeleteMapping("/items/{itemId}/dislike")
-    public ResponseEntity<Map<String, String>> undislikeItem(@PathVariable Long itemId) {
-        Long userId = getCurrentUserId();
+    public ResponseEntity<Map<String, String>> deleteDislikeFeedback(@PathVariable Long itemId) {
+        Long userId = getUserId();
         outfitService.removeFeedback(userId, itemId, LikeStatus.DISLIKE);
         return ResponseEntity.ok(Map.of("message", "피드백이 취소되었습니다."));
     }
