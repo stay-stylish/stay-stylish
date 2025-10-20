@@ -1,10 +1,11 @@
-package org.example.staystylish.domain.outfit.model;
+package org.example.staystylish.domain.outfit.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.staystylish.domain.outfit.enums.LikeStatus;
 import org.example.staystylish.domain.product.entity.Product;
 import org.example.staystylish.domain.user.entity.User;
 
@@ -12,12 +13,12 @@ import org.example.staystylish.domain.user.entity.User;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "user_item_feedback",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "user_item_unique",
-            columnNames = {"user_id", "product_id"}
-        )
-    }
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "user_item_unique",
+                        columnNames = {"user_id", "product_id"}
+                )
+        }
 )
 public class UserItemFeedback {
 
@@ -37,15 +38,15 @@ public class UserItemFeedback {
     @Column(nullable = false)
     private LikeStatus likeStatus;
 
-    public void setLikeStatus(LikeStatus likeStatus) {
-        this.likeStatus = likeStatus;
-    }
-
     @Builder
     @SuppressWarnings("unused")
     public UserItemFeedback(User user, Product product, LikeStatus likeStatus) {
         this.user = user;
         this.product = product;
+        this.likeStatus = likeStatus;
+    }
+
+    public void setLikeStatus(LikeStatus likeStatus) {
         this.likeStatus = likeStatus;
     }
 }
