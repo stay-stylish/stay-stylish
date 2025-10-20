@@ -2,21 +2,25 @@ package org.example.staystylish.domain.community.share.service;
 
 import org.example.staystylish.domain.community.dto.response.ShareResponse;
 import org.example.staystylish.domain.community.entity.Post;
+import org.example.staystylish.domain.community.exception.CommunityException;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.community.repository.ShareRepository;
 import org.example.staystylish.domain.community.service.ShareService;
 import org.example.staystylish.domain.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class ShareServiceTest {
 
     @Mock
@@ -33,8 +37,6 @@ class ShareServiceTest {
 
     @BeforeEach
     void 게시글_세팅() {
-        MockitoAnnotations.openMocks(this);
-
         user = User.builder().id(1L).nickname("수영").build();
         post = Post.builder().id(1L).title("테스트 게시글").build();
     }
@@ -58,7 +60,7 @@ class ShareServiceTest {
 
         // when & then
         assertThatThrownBy(() -> shareService.sharePost(user, 1L, ""))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(CommunityException.class)
                 .hasMessageContaining("플랫폼");
     }
 }

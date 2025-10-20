@@ -9,9 +9,11 @@ import org.example.staystylish.domain.community.service.PostService;
 import org.example.staystylish.domain.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +25,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
     @Mock
@@ -36,8 +39,6 @@ class PostServiceTest {
 
     @BeforeEach
     void 게시글_유저_세팅() {
-        MockitoAnnotations.openMocks(this);
-
         user = User.builder()
                 .id(1L)
                 .email("user@example.com")

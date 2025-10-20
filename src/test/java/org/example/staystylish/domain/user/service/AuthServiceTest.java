@@ -12,9 +12,11 @@ import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -25,6 +27,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
     @Mock
@@ -44,8 +47,6 @@ class AuthServiceTest {
 
     @BeforeEach
     void 유저_세팅() {
-        MockitoAnnotations.openMocks(this);
-
         signupRequest = new SignupRequest(
                 "test@example.com",
                 "password123",
@@ -62,10 +63,12 @@ class AuthServiceTest {
                 .email("test@example.com")
                 .password("encoded_pw")
                 .nickname("수영")
+                .region("서울")
                 .stylePreference("스트릿")
                 .gender(Gender.MALE)
                 .role(Role.USER)
                 .provider(Provider.LOCAL)
+                .providerId("1L")
                 .build();
     }
 
