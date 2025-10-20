@@ -1,7 +1,7 @@
 package org.example.staystylish.domain.outfit.controller;
 
-import org.example.staystylish.domain.outfit.model.LikeStatus;
-import org.example.staystylish.domain.outfit.model.UserItemFeedback;
+import org.example.staystylish.domain.outfit.entity.UserItemFeedback;
+import org.example.staystylish.domain.outfit.enums.LikeStatus;
 import org.example.staystylish.domain.outfit.repository.UserItemFeedbackRepository;
 import org.example.staystylish.domain.product.entity.Product;
 import org.example.staystylish.domain.product.repository.ProductRepository;
@@ -53,7 +53,7 @@ class OutfitControllerTest {
         productRepository.deleteAll();
         userRepository.deleteAll();
 
-        // The controller is hardcoded to use userId = 1L. We save a user and rely on the test DB assigning it ID 1.
+        // 컨트롤러는 userId = 1L을 사용하도록 하드코딩되어 있습니다. 테스트 DB가 ID 1을 할당하도록 사용자를 저장합니다.
         User userToSave = User.builder().email("test@example.com").password("password").nickname("tester").build();
         testUser = userRepository.save(userToSave);
 
@@ -64,12 +64,12 @@ class OutfitControllerTest {
     @Test
     @DisplayName("시나리오 1: 아이템 좋아요")
     void testLikeItem() throws Exception {
-        // when
+        // 실행
         mockMvc.perform(post("/api/v1/outfits/items/{itemId}/like", product1.getId()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("피드백이 성공적으로 저장되었습니다."));
 
-        // then
+        // 검증
         Optional<UserItemFeedback> feedback = userItemFeedbackRepository.findByUserIdAndProductId(testUser.getId(), product1.getId());
         assertThat(feedback).isPresent();
         assertThat(feedback.get().getLikeStatus()).isEqualTo(LikeStatus.LIKE);
@@ -78,11 +78,11 @@ class OutfitControllerTest {
     @Test
     @DisplayName("시나리오 2: 아이템 좋아요 취소")
     void testUnlikeItem() throws Exception {
-        // given
+        // 준비
         UserItemFeedback initialFeedback = UserItemFeedback.builder().user(testUser).product(product1).likeStatus(LikeStatus.LIKE).build();
         userItemFeedbackRepository.save(initialFeedback);
 
-        // when
+        // 실행
         mockMvc.perform(delete("/api/v1/outfits/items/{itemId}/like", product1.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("피드백이 취소되었습니다."));
@@ -95,12 +95,12 @@ class OutfitControllerTest {
     @Test
     @DisplayName("시나리오 3: 아이템 싫어요")
     void testDislikeItem() throws Exception {
-        // when
+        // 실행
         mockMvc.perform(post("/api/v1/outfits/items/{itemId}/dislike", product2.getId()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("피드백이 성공적으로 저장되었습니다."));
 
-        // then
+        // 검증
         Optional<UserItemFeedback> feedback = userItemFeedbackRepository.findByUserIdAndProductId(testUser.getId(), product2.getId());
         assertThat(feedback).isPresent();
         assertThat(feedback.get().getLikeStatus()).isEqualTo(LikeStatus.DISLIKE);
@@ -109,16 +109,16 @@ class OutfitControllerTest {
     @Test
     @DisplayName("시나리오 4: 아이템 싫어요 취소")
     void testUndislikeItem() throws Exception {
-        // given
+        // 준비
         UserItemFeedback initialFeedback = UserItemFeedback.builder().user(testUser).product(product2).likeStatus(LikeStatus.DISLIKE).build();
         userItemFeedbackRepository.save(initialFeedback);
 
-        // when
+        // 실행
         mockMvc.perform(delete("/api/v1/outfits/items/{itemId}/dislike", product2.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("피드백이 취소되었습니다."));
 
-        // then
+        // 검증
         Optional<UserItemFeedback> feedback = userItemFeedbackRepository.findByUserIdAndProductId(testUser.getId(), product2.getId());
         assertThat(feedback).isNotPresent();
     }
