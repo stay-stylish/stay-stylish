@@ -1,10 +1,16 @@
-package org.example.staystylish.localweather.util;
+package org.example.staystylish.domain.localweather.util;
 
 /**
- * KMA 격자 <-> 위경도 변환 (LCC 투영법 기반)
- * 변환 코드는 공개된 Gist/참고자료를 기반으로 구현.
+ * 위경도 ↔ 기상청 격자 좌표 변환 유틸리티 클래스
+ *
+ * - KMA의 LCC 투영법 기반으로 작성
+ * - 입력: 위도(lat), 경도(lon)
+ * - 출력: 격자 좌표(nx, ny)
+ *
+ * 기상청 초단기예보/실황 API는 격자 좌표로만 요청할 수 있음.
  */
-//위 수식/상수(XO, YO)는 기상청에서 사용하는 표준값을 사용했습니다. 실무에서는 반드시 APHub 문서나 첨부자료의 표준값을 확인하세요.
+
+//위 수식/상수(XO, YO)는 기상청에서 사용하는 표준값을 사용했습니다.
 public class KmaGridConverter {
 
     // 상수 (기상청 기준)
@@ -20,7 +26,7 @@ public class KmaGridConverter {
     private static final double DEGRAD = Math.PI / 180.0;
 
     public static int[] latLonToGrid(double lat, double lon) {
-        // Implementation from public gist/reference
+
         double re = RE / GRID;
         double slat1 = SLAT1 * DEGRAD;
         double slat2 = SLAT2 * DEGRAD;

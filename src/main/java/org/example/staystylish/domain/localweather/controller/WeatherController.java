@@ -1,11 +1,11 @@
-package org.example.staystylish.localweather.controller;
+package org.example.staystylish.domain.localweather.controller;
 
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.localweather.dto.GpsRequest;
-import org.example.staystylish.localweather.dto.WeatherResponse;
-import org.example.staystylish.localweather.service.WeatherService;
+import org.example.staystylish.domain.localweather.dto.GpsRequest;
+import org.example.staystylish.domain.localweather.dto.WeatherResponse;
+import org.example.staystylish.domain.localweather.service.WeatherService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;

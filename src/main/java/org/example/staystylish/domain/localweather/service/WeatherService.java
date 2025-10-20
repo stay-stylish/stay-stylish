@@ -1,6 +1,6 @@
-package org.example.staystylish.localweather.service;
+package org.example.staystylish.domain.localweather.service;
 
-import org.example.staystylish.localweather.dto.WeatherResponse;
+import org.example.staystylish.domain.localweather.dto.WeatherResponse;
 import reactor.core.publisher.Mono;
 
 public interface WeatherService {
