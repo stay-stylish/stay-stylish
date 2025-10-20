@@ -23,7 +23,7 @@ jobs:
             const prNum = context.payload.pull_request.number;
             const author = context.payload.pull_request.user.login;
 
-            const reviewers = ["csy10001","jihoLee0818","youngrae0317","HY-WG"];
+            const reviewers = ["csy10001","jihoLee0818","youngrae0317"];
 
             const deny = new Set([author, "dependabot[bot]", "github-actions[bot]"]);
 
