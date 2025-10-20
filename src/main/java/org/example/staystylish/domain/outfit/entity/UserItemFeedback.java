@@ -5,7 +5,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.example.staystylish.common.entity.BaseEntity;
 import org.example.staystylish.domain.outfit.enums.LikeStatus;
 import org.example.staystylish.domain.product.entity.Product;
 import org.example.staystylish.domain.user.entity.User;
@@ -24,7 +23,7 @@ import org.example.staystylish.domain.user.entity.User;
                 )
         }
 )
-public class UserItemFeedback extends BaseEntity {
+public class UserItemFeedback {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
