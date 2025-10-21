@@ -3,6 +3,7 @@ package org.example.staystylish.domain.traveloutfit.service;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +34,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class TravelOutfitService {
 
+    private static final int MAX_FORECAST_DAYS = 14;
     private final WeatherApiClient weatherApiClient;
     private final TravelOutfitRepository travelOutfitRepository;
     private final TravelAiClient aiClient;
@@ -44,9 +46,17 @@ public class TravelOutfitService {
                                                      TravelOutfitRequest request,
                                                      Gender gender) {
 
-        // 기간 검증 로직 (여행 기간이 1일 미만이거나 14일 초과 시 예외 처리 -> 날씨 API가 14일 예보만 가능)
-        long days = DAYS.between(request.startDate(), request.endDate()) + 1;
-        if (days < 1 || days > 14) {
+        // 기간 검증 로직1 (종료일이 시작일보다 앞이면 오류 발생)
+        final LocalDate start = request.startDate();
+        final LocalDate end = request.endDate();
+
+        if (end.isBefore(start)) {
+            throw new GlobalException(TravelOutfitErrorCode.INVALID_PERIOD);
+        }
+
+        // 기간 검증 로직2 (14일 초과 시 예외 처리 -> 날씨 API가 14일 예보만 가능)
+        final long days = DAYS.between(start, end) + 1;
+        if (days > MAX_FORECAST_DAYS) {
             throw new GlobalException(TravelOutfitErrorCode.INVALID_PERIOD);
         }
 
