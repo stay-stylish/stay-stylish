@@ -1,14 +1,14 @@
-package org.example.staystylish.domain.outfit.controller;
+package org.example.staystylish.domain.dailyoutfit.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.domain.outfit.dto.response.OutfitRecommendationResponse;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.example.staystylish.common.security.UserPrincipal;
-import org.example.staystylish.domain.outfit.dto.request.FeedbackRequest;
-import org.example.staystylish.domain.outfit.enums.LikeStatus;
-import org.example.staystylish.domain.outfit.service.OutfitService;
+import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackRequest;
+import org.example.staystylish.domain.dailyoutfit.dto.response.OutfitRecommendationResponse;
+import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
+import org.example.staystylish.domain.dailyoutfit.service.OutfitService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
