@@ -37,15 +37,15 @@ public class OutfitService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final WeatherApiClient weatherApiClient;
-    private final ChatClient.Builder chatClientBuilder;
+    private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
 
-    public OutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductRepository productRepository, UserRepository userRepository, WeatherApiClient weatherApiClient, ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper) {
+    public OutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductRepository productRepository, UserRepository userRepository, WeatherApiClient weatherApiClient, ChatClient chatClient, ObjectMapper objectMapper) {
         this.userItemFeedbackRepository = userItemFeedbackRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.weatherApiClient = weatherApiClient;
-        this.chatClientBuilder = chatClientBuilder;
+        this.chatClient = chatClient;
         this.objectMapper = objectMapper;
     }
 
@@ -70,7 +70,6 @@ public class OutfitService {
                 .collect(Collectors.toList());
 
         // 4. 프롬프트 생성
-        ChatClient chatClient = chatClientBuilder.build();
         String systemPrompt = getSystemPrompt();
         String userPrompt = buildUserPrompt(user, todayWeather, recentFeedbacks);
 
