@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.weather.consts;
+package org.example.staystylish.domain.globalweather.consts;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
