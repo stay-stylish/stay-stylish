@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
 import org.example.staystylish.domain.localweather.dto.WeatherItem;
+import org.example.staystylish.domain.localweather.entity.Region;
 import org.example.staystylish.domain.localweather.entity.Weather;
 
 public class WeatherMapper {
@@ -33,8 +34,8 @@ public class WeatherMapper {
 
         return new UserWeatherResponse(province, city, district, temp, hum, rain, wind, sky, pty);
     }
-
-    public static Weather toWeather(List<WeatherItem> items, String region) {
+    // 💡 String region -> Region region으로 변경하여 Weather 엔티티 타입에 맞춥니다.
+    public static Weather toWeather(List<WeatherItem> items, Region region) {
         Double temp = null, hum = null, wind = null, rain = null;
         LocalDateTime forecastTime = LocalDateTime.now();
 
