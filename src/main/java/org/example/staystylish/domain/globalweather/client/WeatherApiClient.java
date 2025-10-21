@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.weather.client;
+package org.example.staystylish.domain.globalweather.client;
 
 import java.time.LocalDate;
 import java.util.List;

@@ -12,6 +12,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.exception.GlobalException;
+import org.example.staystylish.domain.globalweather.client.WeatherApiClient;
+import org.example.staystylish.domain.globalweather.client.WeatherApiClient.Daily;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
 import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitErrorCode;
@@ -25,8 +27,6 @@ import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSumm
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
-import org.example.staystylish.domain.weather.client.WeatherApiClient;
-import org.example.staystylish.domain.weather.client.WeatherApiClient.Daily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
