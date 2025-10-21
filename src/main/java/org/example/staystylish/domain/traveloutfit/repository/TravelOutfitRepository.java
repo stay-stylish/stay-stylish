@@ -1,7 +1,7 @@
-package org.example.staystylish.domain.travel.repository;
+package org.example.staystylish.domain.traveloutfit.repository;
 
 import java.util.Optional;
-import org.example.staystylish.domain.travel.entity.TravelOutfit;
+import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

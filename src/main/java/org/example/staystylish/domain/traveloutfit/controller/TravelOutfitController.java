@@ -1,16 +1,16 @@
-package org.example.staystylish.domain.travel.controller;
+package org.example.staystylish.domain.traveloutfit.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.dto.response.ApiResponse;
 import org.example.staystylish.common.dto.response.PageResponse;
 import org.example.staystylish.common.security.UserPrincipal;
-import org.example.staystylish.domain.travel.consts.TravelOutfitSuccessCode;
-import org.example.staystylish.domain.travel.dto.request.TravelOutfitRequest;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitDetailResponse;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitSummaryResponse;
-import org.example.staystylish.domain.travel.service.TravelOutfitService;
+import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitSuccessCode;
+import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
+import org.example.staystylish.domain.traveloutfit.service.TravelOutfitService;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

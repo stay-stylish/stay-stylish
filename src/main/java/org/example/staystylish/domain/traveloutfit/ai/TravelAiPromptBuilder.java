@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.travel.ai;
+package org.example.staystylish.domain.traveloutfit.ai;
 
 import java.time.LocalDate;
 import org.springframework.stereotype.Component;

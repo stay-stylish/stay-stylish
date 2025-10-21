@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.travel.dto.request;
+package org.example.staystylish.domain.traveloutfit.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

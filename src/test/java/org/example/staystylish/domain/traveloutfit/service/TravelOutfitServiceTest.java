@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.travel.service;
+package org.example.staystylish.domain.traveloutfit.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -16,17 +16,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.example.staystylish.common.exception.GlobalException;
-import org.example.staystylish.domain.travel.ai.TravelAiClient;
-import org.example.staystylish.domain.travel.ai.TravelAiPromptBuilder;
-import org.example.staystylish.domain.travel.consts.TravelOutfitErrorCode;
-import org.example.staystylish.domain.travel.dto.request.TravelOutfitRequest;
-import org.example.staystylish.domain.travel.dto.response.AiTravelJson;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitDetailResponse;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.CulturalConstraints;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitSummaryResponse;
-import org.example.staystylish.domain.travel.entity.TravelOutfit;
-import org.example.staystylish.domain.travel.repository.TravelOutfitRepository;
+import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
+import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
+import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitErrorCode;
+import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
+import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.CulturalConstraints;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
+import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
+import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.example.staystylish.domain.weather.client.WeatherApiClient;
 import org.example.staystylish.domain.weather.client.WeatherApiClient.Daily;
@@ -132,6 +132,21 @@ class TravelOutfitServiceTest {
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.INVALID_PERIOD.getMessage());
     }
+
+    @Test
+    @DisplayName("여행 종료일이 시작일보다 빠른 경우 실패")
+    void createRecommendation_Fail_EndDate_Before_StartDate() {
+
+        // given
+        var invalidEndDate = START_DATE.minusDays(1);
+        var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, invalidEndDate);
+
+        // when & then
+        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage(TravelOutfitErrorCode.INVALID_PERIOD.getMessage());
+    }
+
 
     @Test
     @DisplayName("날씨 정보를 가져오지 못한 경우 실패")

@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.travel.entity;
+package org.example.staystylish.domain.traveloutfit.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
