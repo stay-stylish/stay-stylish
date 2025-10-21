@@ -56,6 +56,10 @@ jwt:
   secret: ${JWT_SECRET}
   access-expiration: 3600000  # 1시간 (ms)
 
+app:
+  oauth:
+    redirect-uri: ${OAUTH_REDIRECT_URI}
+
 logging:
   level:
     org.hibernate.SQL: debug

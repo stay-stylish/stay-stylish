@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.weather.client;
+package org.example.staystylish.domain.globalweather.client;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
@@ -8,9 +8,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.staystylish.common.exception.GlobalException;
-import org.example.staystylish.domain.weather.config.WeatherApiProperties;
-import org.example.staystylish.domain.weather.consts.WeatherErrorCode;
-import org.example.staystylish.domain.weather.dto.WeatherApiResponse;
+import org.example.staystylish.domain.globalweather.config.WeatherApiProperties;
+import org.example.staystylish.domain.globalweather.consts.WeatherErrorCode;
+import org.example.staystylish.domain.globalweather.dto.WeatherApiResponse;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -69,6 +69,7 @@ public class WeatherApiClientImpl implements WeatherApiClient {
                         if (!d0.isBefore(start) && !d0.isAfter(end)) {
                             var d = fd.day();
                             list.add(new Daily(
+                                    d0,
                                     d.avgTempC(),
                                     d.avgHumidity(),
                                     d.dailyChanceOfRain(),

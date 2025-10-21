@@ -1,6 +1,10 @@
 package org.example.staystylish.domain.dailyoutfit.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
 import org.example.staystylish.domain.dailyoutfit.dto.response.OutfitRecommendationResponse;
@@ -10,21 +14,24 @@ import org.example.staystylish.domain.dailyoutfit.exception.OutfitErrorCode;
 import org.example.staystylish.domain.dailyoutfit.repository.UserItemFeedbackRepository;
 import org.example.staystylish.domain.productclassification.entity.Product;
 import org.example.staystylish.domain.productclassification.repository.ProductRepository;
+import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
+import org.example.staystylish.domain.dailyoutfit.dto.response.OutfitRecommendationResponse;
+import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
+import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
+import org.example.staystylish.domain.dailyoutfit.exception.OutfitErrorCode;
+import org.example.staystylish.domain.dailyoutfit.repository.UserItemFeedbackRepository;
+import org.example.staystylish.domain.globalweather.client.WeatherApiClient;
+import org.example.staystylish.domain.productclassification.entity.Product;
+import org.example.staystylish.domain.productclassification.repository.ProductRepository;
 import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.exception.UserErrorCode;
 import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
-import org.example.staystylish.domain.weather.client.WeatherApiClient;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * 의상 추천과 관련된 비즈니스 로직을 처리하는 서비스 클래스입니다.
@@ -42,6 +49,9 @@ public class OutfitService {
     private final ObjectMapper objectMapper;
 
     public OutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductRepository productRepository, UserRepository userRepository, WeatherApiClient weatherApiClient, ChatClient chatClient, ObjectMapper objectMapper) {
+    public OutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductRepository productRepository,
+                         UserRepository userRepository, WeatherApiClient weatherApiClient, ChatClient chatClient,
+                         ObjectMapper objectMapper) {
         this.userItemFeedbackRepository = userItemFeedbackRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
@@ -65,9 +75,11 @@ public class OutfitService {
                 .orElse(null);
 
         // 3. 최근 피드백 조회
-        List<FeedbackInfoRequest> recentFeedbacks = userItemFeedbackRepository.findRecentFeedbackByUserId(userId, PageRequest.of(0, 5))
+        List<FeedbackInfoRequest> recentFeedbacks = userItemFeedbackRepository.findRecentFeedbackByUserId(userId,
+                        PageRequest.of(0, 5))
                 .stream()
-                .map(feedback -> new FeedbackInfoRequest(feedback.getProduct().getName(), feedback.getLikeStatus().name()))
+                .map(feedback -> new FeedbackInfoRequest(feedback.getProduct().getName(),
+                        feedback.getLikeStatus().name()))
                 .collect(Collectors.toList());
 
         // 4. 프롬프트 생성
@@ -88,12 +100,14 @@ public class OutfitService {
             if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
                 jsonResponse = jsonResponse.substring(startIndex, endIndex + 1);
             }
-            OutfitRecommendationResponse response = objectMapper.readValue(jsonResponse, OutfitRecommendationResponse.class);
+            OutfitRecommendationResponse response = objectMapper.readValue(jsonResponse,
+                    OutfitRecommendationResponse.class);
             return response;
         } catch (Exception e) {
             // 파싱 실패 시, 대체 응답 반환
             // AI 응답 형식이 잘못된 경우 사용자에게 오류가 표시되지 않도록 방지
-            OutfitRecommendationResponse fallbackResponse = OutfitRecommendationResponse.from("AI 응답을 처리하는 데 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", List.of());
+            OutfitRecommendationResponse fallbackResponse = OutfitRecommendationResponse.from(
+                    "AI 응답을 처리하는 데 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", List.of());
             return fallbackResponse;
         }
     }
@@ -130,13 +144,16 @@ public class OutfitService {
 
         // 사용자 데이터
         sb.append("- 성별: ").append(user.getGender() != null ? user.getGender().name() : "지정되지 않음").append("\n");
-        sb.append("- 선호 스타일: ").append(StringUtils.hasText(user.getStylePreference()) ? user.getStylePreference() : "지정되지 않음").append("\n");
+        sb.append("- 선호 스타일: ")
+                .append(StringUtils.hasText(user.getStylePreference()) ? user.getStylePreference() : "지정되지 않음")
+                .append("\n");
 
         // 피드백 데이터
         if (feedbacks != null && !feedbacks.isEmpty()) {
             sb.append("- 최근 피드백:\n");
             for (FeedbackInfoRequest feedback : feedbacks) {
-                sb.append("  - ").append(feedback.productName()).append(": ").append(feedback.likeStatus()).append("\n");
+                sb.append("  - ").append(feedback.productName()).append(": ").append(feedback.likeStatus())
+                        .append("\n");
             }
         }
 
@@ -157,7 +174,8 @@ public class OutfitService {
         Product product = productRepository.findById(itemId)
                 .orElseThrow(() -> new GlobalException(OutfitErrorCode.ITEM_NOT_FOUND));
 
-        Optional<UserItemFeedback> existingFeedback = userItemFeedbackRepository.findByUserIdAndProductId(userId, itemId);
+        Optional<UserItemFeedback> existingFeedback = userItemFeedbackRepository.findByUserIdAndProductId(userId,
+                itemId);
 
         existingFeedback.ifPresentOrElse(
                 feedback -> {
