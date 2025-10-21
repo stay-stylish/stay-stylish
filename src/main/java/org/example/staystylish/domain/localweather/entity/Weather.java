@@ -36,7 +36,7 @@ public class Weather {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "region_id") // Region 테이블의 ID를 외래 키로 사용
+    @JoinColumn(name = "region_id")
     private Region region;
     private Double temperature;
     private Double humidity;
