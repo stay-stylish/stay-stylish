@@ -16,7 +16,7 @@ public record TravelOutfitSummaryResponse(
         LocalDateTime createdAt
 ) {
     public static TravelOutfitSummaryResponse from(TravelOutfit outfit) {
-        var weather = new WeatherSummary(
+        var weather = WeatherSummary.from(
                 outfit.getAvgTemperature(),
                 outfit.getAvgHumidity(),
                 outfit.getRainProbability(),

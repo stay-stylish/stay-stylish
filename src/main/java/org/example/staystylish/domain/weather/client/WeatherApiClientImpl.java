@@ -69,6 +69,7 @@ public class WeatherApiClientImpl implements WeatherApiClient {
                         if (!d0.isBefore(start) && !d0.isAfter(end)) {
                             var d = fd.day();
                             list.add(new Daily(
+                                    d0,
                                     d.avgTempC(),
                                     d.avgHumidity(),
                                     d.dailyChanceOfRain(),

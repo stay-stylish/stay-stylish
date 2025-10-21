@@ -10,6 +10,6 @@ public interface WeatherApiClient {
     Mono<List<Daily>> getDailyForecast(String city, LocalDate start, LocalDate end);
 
     // 서비스 계층으로 전달
-    record Daily(Double avgTempC, Double avgHumidity, Integer rainChance, String conditionText) {
+    record Daily(LocalDate date, Double avgTempC, Double avgHumidity, Integer rainChance, String conditionText) {
     }
 }
