@@ -30,7 +30,7 @@ public record SignupRequest(
     }
 
     public static SignupRequest of(String email, String password, String nickname,
-                                   String region, String stylePreference,
+                                   String stylePreference,
                                    String gender, String provider, String providerId) {
         return new SignupRequest(email, password, nickname, stylePreference, gender, provider, providerId);
     }
