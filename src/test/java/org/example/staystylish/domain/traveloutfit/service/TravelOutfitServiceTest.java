@@ -134,6 +134,21 @@ class TravelOutfitServiceTest {
     }
 
     @Test
+    @DisplayName("여행 종료일이 시작일보다 빠른 경우 실패")
+    void createRecommendation_Fail_EndDate_Before_StartDate() {
+
+        // given
+        var invalidEndDate = START_DATE.minusDays(1);
+        var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, invalidEndDate);
+
+        // when & then
+        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage(TravelOutfitErrorCode.INVALID_PERIOD.getMessage());
+    }
+
+
+    @Test
     @DisplayName("날씨 정보를 가져오지 못한 경우 실패")
     void createRecommendation_Fail_Weather_Fetch_Failed() {
 
