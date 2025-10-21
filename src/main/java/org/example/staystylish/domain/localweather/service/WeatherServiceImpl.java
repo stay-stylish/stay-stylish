@@ -14,6 +14,7 @@ import org.example.staystylish.domain.localweather.repository.WeatherRepository;
 import org.example.staystylish.domain.localweather.util.KmaGridConverter;
 import org.example.staystylish.domain.localweather.util.WeatherMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -49,6 +50,7 @@ public class WeatherServiceImpl implements WeatherService {
     public WeatherServiceImpl(WebClient.Builder webClientBuilder,
                               RedisTemplate<String, Object> redisTemplate,
                               WeatherRepository weatherRepository,
+                              RegionRepository regionRepository,
                               @Value("${kma.serviceKey}") String serviceKey,
                               @Value("${kma.baseUrl}") String baseUrl) {
         this.webClient = webClientBuilder.baseUrl(baseUrl).build();
@@ -65,23 +67,23 @@ public class WeatherServiceImpl implements WeatherService {
      * 사용자 위경도 기준 기상 데이터 조회
      */
     @Override
-    public Mono<WeatherResponse> getWeatherByLatLon (GpsRequest request) {
+    public Mono<UserWeatherResponse> getWeatherByLatLon(GpsRequest request) {
 
         double lat = request.latitude();
         double lon = request.longitude();
 
         // 1️⃣ DB에서 가장 가까운 region 조회
-        Region region = regionRepository.findTopByNearest(lat, lon)
+        Region region = regionRepository.findNearestRegions(lat, lon, PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
                 .orElseThrow(() -> new ExternalApiException("Region not found"));
 
-        String regionName = region.getCity().isEmpty() ? region.getProvince() : region.getCity();
-
+        // 이 지역 정보 (region)를 최종 UserWeatherResponse에 사용
         if (serviceKey == null || serviceKey.isBlank()) {
             return Mono.error(new ExternalApiException("KMA service key not configured"));
         }
 
-
-        //  위경도 → 격자 좌표(nx, ny) 변환
+        // 위경도 → 격자 좌표(nx, ny) 변환
         int[] xy = KmaGridConverter.latLonToGrid(lat, lon);
         int nx = xy[0];
         int ny = xy[1];
@@ -93,8 +95,16 @@ public class WeatherServiceImpl implements WeatherService {
 
         // Redis 캐시 확인
         String cacheKey = "weather:" + nx + ":" + ny + ":" + baseDate + ":" + baseTime;
-        WeatherResponse cached = (WeatherResponse) redisTemplate.opsForValue().get(cacheKey);
-        if (cached != null) return Mono.just(cached);
+        Object cachedObj = redisTemplate.opsForValue().get(cacheKey);
+
+        if (cachedObj != null) {
+            // LinkedHashMap → WeatherResponse 변환
+            WeatherResponse cached = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .convertValue(cachedObj, WeatherResponse.class);
+
+            // 💡 캐시가 있을 경우에도 최종 DTO로 변환하여 반환해야 합니다.
+            return Mono.just(WeatherMapper.toUserWeatherResponse(cached.items(), region));
+        }
 
         // 인증키 URL 인코딩
         String encodedKey;
@@ -111,7 +121,7 @@ public class WeatherServiceImpl implements WeatherService {
                         .queryParam("authKey", encodedKey)
                         .queryParam("numOfRows", 100)
                         .queryParam("pageNo", 1)
-                        .queryParam("dataType", "XML") // OBS는 XML 반환
+                        .queryParam("dataType", "XML")
                         .queryParam("base_date", baseDate)
                         .queryParam("base_time", baseTime)
                         .queryParam("nx", nx)
@@ -120,21 +130,27 @@ public class WeatherServiceImpl implements WeatherService {
                 .retrieve()
                 .bodyToMono(String.class) // XML 문자열로 받음
                 .map(xml -> {
-                    // 1) XML → WeatherResponse 변환
                     WeatherResponse response = parseWeatherItemsFromXml(xml, nx, ny, baseDate, baseTime);
 
-                    // 2) DB 저장
-                    Weather weather = WeatherMapper.toWeather(response.items(), regionName);
+                    List<WeatherItem> items = response.items();
+                    String district = region.getDistrict(); // DB 저장을 위해 지역명(String) 사용
+
+                    // 💡 DB 저장: WeatherMapper.toWeather 호출 시 확보된 지역명(String) 사용
+                    Weather weather = WeatherMapper.toWeather(items, region);
                     weatherRepository.save(weather);
 
-                    // 3) Redis 캐시 저장 (TTL 적용)
-                    redisTemplate.opsForValue().set(cacheKey, response);
+                    // Redis 캐시 저장 (TTL 적용)
+                    redisTemplate.opsForValue().set(cacheKey, response, CACHE_TTL);
 
-                    return response;
+                    return response; // 다음 map 체인을 위해 WeatherResponse 반환
                 })
+
+                // 💡 최종 DTO 변환: WeatherResponse를 UserWeatherResponse로 변환합니다.
+                .map(weatherResponse -> WeatherMapper.toUserWeatherResponse(weatherResponse.items(), region))
                 .onErrorMap(WebClientRequestException.class,
                         ex -> new ExternalApiException("KMA request failed: " + ex.getMessage(), ex));
     }
+
     /**
      * XML → WeatherItem 리스트 변환 후 WeatherResponse 생성
      */

@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -33,7 +35,9 @@ public class Weather {
     @Column(name = "weather_id")
     private Long id;
 
-    private String region;
+    @ManyToOne
+    @JoinColumn(name = "region_id") // Region 테이블의 ID를 외래 키로 사용
+    private Region region;
     private Double temperature;
     private Double humidity;
     private Double rainfall;
