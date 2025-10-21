@@ -23,6 +23,7 @@ public class TravelOutfit extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "travel_outfit_id")
     private Long id;
 
     private Long userId;
