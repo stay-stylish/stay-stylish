@@ -15,6 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 
+/**
+ * POST /api/v1/weather/weather-by-gps
+ * - 사용자 위도/경도를 받아 날씨 정보 조회
+ * - 비동기 Mono<ResponseEntity<WeatherResponse>> 반환
+ */
+
 @CrossOrigin(origins = "*") // 개발용: 프론트엔드 다른 포트 허용
 @RestController
 @RequestMapping("/api/v1/weather")
