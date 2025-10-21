@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.weather.config;
+package org.example.staystylish.domain.globalweather.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

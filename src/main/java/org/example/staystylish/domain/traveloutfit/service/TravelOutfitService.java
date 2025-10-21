@@ -1,15 +1,19 @@
 package org.example.staystylish.domain.traveloutfit.service;
 
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.util.Comparator.comparing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.exception.GlobalException;
+import org.example.staystylish.domain.globalweather.client.WeatherApiClient;
+import org.example.staystylish.domain.globalweather.client.WeatherApiClient.Daily;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
 import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitErrorCode;
@@ -18,23 +22,23 @@ import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.RainAdvisory;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
-import org.example.staystylish.domain.weather.client.WeatherApiClient;
-import org.example.staystylish.domain.weather.client.WeatherApiClient.Daily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
 public class TravelOutfitService {
 
     private static final int MAX_FORECAST_DAYS = 14;
+    private static final int MUST_UMBRELLA = 70;
+    private static final int PACK_UMBRELLA = 30;
     private final WeatherApiClient weatherApiClient;
     private final TravelOutfitRepository travelOutfitRepository;
     private final TravelAiClient aiClient;
@@ -61,10 +65,10 @@ public class TravelOutfitService {
         }
 
         // 날씨 조회 로직
-        Mono<List<Daily>> mono = weatherApiClient.getDailyForecast(
-                request.city(), request.startDate(), request.endDate());
+        List<Daily> dailyList = weatherApiClient
+                .getDailyForecast(request.city(), start, end)
+                .block();
 
-        List<Daily> dailyList = mono.block();
         if (dailyList == null || dailyList.isEmpty()) {
             throw new GlobalException(TravelOutfitErrorCode.WEATHER_FETCH_FAILED);
         }
@@ -75,18 +79,14 @@ public class TravelOutfitService {
         double totalRainProb = 0.0;
 
         for (Daily daily : dailyList) {
-            Double temp = daily.avgTempC();
-            Double humidity = daily.avgHumidity();
-            Integer rainChance = daily.rainChance();
-
-            if (temp != null) {
-                totalTemp += temp;
+            if (daily.avgTempC() != null) {
+                totalTemp += daily.avgTempC();
             }
-            if (humidity != null) {
-                totalHumidity += humidity;
+            if (daily.avgHumidity() != null) {
+                totalHumidity += daily.avgHumidity();
             }
-            if (rainChance != null) {
-                totalRainProb += rainChance;
+            if (daily.rainChance() != null) {
+                totalRainProb += daily.rainChance();
             }
         }
 
@@ -108,11 +108,15 @@ public class TravelOutfitService {
         // Gender ENUM을 한글 문자열 변환
         String userGender = toKorean(gender);
 
+        // 일자별 우산 가이드, 요약문 생성 로직 호출
+        List<RainAdvisory> advisories = toRainAdvisories(dailyList);
+        String umbrellaSummary = buildUmbrellaSummary(advisories);
+
         // 프롬프트 생성
         String prompt = promptBuilder.buildPrompt(
                 request.country(), request.city(),
                 request.startDate(), request.endDate(),
-                userGender, condition, avgTemp, avgRainProb
+                userGender, condition, avgTemp, umbrellaSummary
         );
 
         // ai 호출 및 파싱
@@ -147,7 +151,9 @@ public class TravelOutfitService {
                         saved.getAvgTemperature(),
                         saved.getAvgHumidity(),
                         saved.getRainProbability(),
-                        saved.getCondition()
+                        saved.getCondition(),
+                        advisories,
+                        umbrellaSummary
                 ),
                 culturalConstraints,
                 aiOutfit,
@@ -179,5 +185,33 @@ public class TravelOutfitService {
             case FEMALE -> "여성";
             case MALE -> "남성";
         };
+    }
+
+    private List<RainAdvisory> toRainAdvisories(List<Daily> dailyList) {
+
+        return dailyList.stream()
+                .filter(d -> d != null && d.date() != null && d.rainChance() != null)
+                .map(d -> {
+                    int rainChance = d.rainChance();
+                    String advice = (rainChance >= MUST_UMBRELLA) ? "우산 필수"
+                            : (rainChance >= PACK_UMBRELLA) ? "우산 챙기면 좋아요"
+                                    : "우산 없어도 무방해요";
+                    return new RainAdvisory(d.date(), rainChance, advice);
+                })
+                .sorted(comparing(RainAdvisory::date))
+                .toList();
+    }
+
+    private String buildUmbrellaSummary(List<RainAdvisory> list) {
+
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+
+        var formatter = DateTimeFormatter.ofPattern("M/d");
+
+        return list.stream()
+                .map(a -> a.date().format(formatter) + " (" + a.rainProbability() + "%) " + a.advice())
+                .collect(Collectors.joining(" / "));
     }
 }
