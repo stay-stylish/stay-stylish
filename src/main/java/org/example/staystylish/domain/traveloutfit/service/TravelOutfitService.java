@@ -38,7 +38,7 @@ public class TravelOutfitService {
 
     private static final int MAX_FORECAST_DAYS = 14;
     private static final int MUST_UMBRELLA = 70;
-    private static final int PACK_UMBRELLA = 30; //
+    private static final int PACK_UMBRELLA = 30;
     private final WeatherApiClient weatherApiClient;
     private final TravelOutfitRepository travelOutfitRepository;
     private final TravelAiClient aiClient;
@@ -208,10 +208,10 @@ public class TravelOutfitService {
             return null;
         }
 
-        var formatted = DateTimeFormatter.ofPattern("M/d");
+        var formatter = DateTimeFormatter.ofPattern("M/d");
 
         return list.stream()
-                .map(a -> a.date().format(formatted) + " (" + a.rainProbability() + "%) " + a.advice())
+                .map(a -> a.date().format(formatter) + " (" + a.rainProbability() + "%) " + a.advice())
                 .collect(Collectors.joining(" / "));
     }
 }
