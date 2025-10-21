@@ -34,6 +34,8 @@ dependencyManagement {
 }
 
 dependencies {
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.16.0'
+    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
     implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
     implementation platform("org.springframework.ai:spring-ai-bom:1.0.0")
 
