@@ -27,7 +27,7 @@ public class RedisConfig {
 
     /**
      * RedisTemplate Bean
-     * - Redis 연산을 쉽게 수행할 수 있도록 템플릿(template) 제공.
+     * - Redis 연산을 쉽게 수행할 수 있도록 템플릿(template) 제공..
      */
 
     @Bean
