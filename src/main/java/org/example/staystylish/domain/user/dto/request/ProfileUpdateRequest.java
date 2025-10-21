@@ -10,8 +10,6 @@ public record ProfileUpdateRequest(
 
         String stylePreference,
 
-        String region,
-
         @Pattern(regexp = "^(?i)MALE|FEMALE$", message = "gender는 MALE 또는 FEMALE만 가능합니다.")
         String gender
 ) {
