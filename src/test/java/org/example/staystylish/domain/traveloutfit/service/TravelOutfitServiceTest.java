@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -82,14 +81,14 @@ class TravelOutfitServiceTest {
         String expectedAiJson = "{\"summary\":\"테스트 AI 응답\"}";
 
         // 날씨 Mock
-        var weather = new Daily(20.0, 60.0, 10, "맑음");
+        var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
         when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
                 .thenReturn(Mono.just(List.of(weather)));
 
         // AI 프롬프트 Mock
         when(promptBuilder.buildPrompt(
                 anyString(), anyString(), any(LocalDate.class), any(LocalDate.class),
-                anyString(), anyString(), anyDouble(), anyInt()
+                anyString(), anyString(), anyDouble(), anyString()
         )).thenReturn("테스트 프롬프트");
         when(aiClient.callForJson("테스트 프롬프트")).thenReturn(expectedAiJson);
 
@@ -172,13 +171,13 @@ class TravelOutfitServiceTest {
         var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, END_DATE);
 
         // 날씨 Mock
-        var weather = new Daily(20.0, 60.0, 10, "맑음");
+        var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
         when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
                 .thenReturn(Mono.just(List.of(weather)));
 
         // AI 프롬프트 Mock
         when(promptBuilder.buildPrompt(anyString(), anyString(), any(), any(), anyString(), anyString(), anyDouble(),
-                anyInt()))
+                anyString()))
                 .thenReturn("테스트 프롬프트");
 
         // AI Client가 예외 발생
