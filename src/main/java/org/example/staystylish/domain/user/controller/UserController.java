@@ -55,7 +55,6 @@ public class UserController {
                         principal.getUser(),
                         request.nickname(),
                         request.stylePreference(),
-                        request.region(),
                         request.toGender()
                 ));
     }

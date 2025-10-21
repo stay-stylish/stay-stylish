@@ -20,8 +20,8 @@ public class UserService {
 
     // 프로필 수정
     @Transactional
-    public UserResponse updateProfile(User user, String nickname, String stylePreference, String region, Gender gender) {
-        user.updateProfile(nickname, stylePreference, region, gender);
+    public UserResponse updateProfile(User user, String nickname, String stylePreference, Gender gender) {
+        user.updateProfile(nickname, stylePreference, gender);
         return UserResponse.from(user);
     }
 

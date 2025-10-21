@@ -14,6 +14,7 @@ public class Share {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "share_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

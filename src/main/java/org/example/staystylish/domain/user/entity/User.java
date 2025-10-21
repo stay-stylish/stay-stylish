@@ -30,9 +30,6 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 30)
     private String nickname;
 
-    @Column(length = 50)
-    private String region;
-
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
@@ -52,10 +49,9 @@ public class User extends BaseEntity {
 
     private LocalDateTime deletedAt;
 
-    public void updateProfile(String nickname, String stylePreference, String region, Gender gender) {
+    public void updateProfile(String nickname, String stylePreference, Gender gender) {
         this.nickname = nickname;
         this.stylePreference = stylePreference;
-        this.region = region;
         this.gender = gender;
     }
 
