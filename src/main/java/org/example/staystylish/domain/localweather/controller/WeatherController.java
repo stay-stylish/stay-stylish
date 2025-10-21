@@ -1,10 +1,8 @@
 package org.example.staystylish.domain.localweather.controller;
 
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.domain.localweather.dto.GpsRequest;
-import org.example.staystylish.domain.localweather.dto.WeatherResponse;
+import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
 import org.example.staystylish.domain.localweather.service.WeatherService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -30,13 +28,13 @@ public class WeatherController {
     private final WeatherService weatherService;
 
     @PostMapping("/weather-by-gps")
-    public Mono<ResponseEntity<WeatherResponse>> weatherByGps(@RequestBody GpsRequest req) {
+    public Mono<ResponseEntity<UserWeatherResponse>> weatherByGps(@RequestBody GpsRequest req) {
         if (req.latitude() == null || req.longitude() == null) {
             return Mono.just(ResponseEntity.badRequest()
-                    .body(new WeatherResponse(List.of(), Map.of("error", "latitude and longitude required"))));
+                    .body(new UserWeatherResponse("", "", "", null, null, null, null, "", "")));
         }
-        return weatherService.getWeatherByLatLon(req.latitude(), req.longitude())
-                .map(ResponseEntity::ok);
+        return weatherService.getWeatherByLatLon(req)
+                .map.
+        (ResponseEntity::ok);
     }
-
 }
