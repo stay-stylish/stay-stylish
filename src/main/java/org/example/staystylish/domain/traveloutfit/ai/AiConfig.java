@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.travel.ai;
+package org.example.staystylish.domain.traveloutfit.ai;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;

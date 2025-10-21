@@ -1,9 +1,9 @@
-package org.example.staystylish.domain.travel.dto.response;
+package org.example.staystylish.domain.traveloutfit.dto.response;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.WeatherSummary;
-import org.example.staystylish.domain.travel.entity.TravelOutfit;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.WeatherSummary;
+import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 
 public record TravelOutfitSummaryResponse(
         Long travelId,

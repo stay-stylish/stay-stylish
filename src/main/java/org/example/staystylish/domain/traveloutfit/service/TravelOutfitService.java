@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.travel.service;
+package org.example.staystylish.domain.traveloutfit.service;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
@@ -9,17 +9,17 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.exception.GlobalException;
-import org.example.staystylish.domain.travel.ai.TravelAiClient;
-import org.example.staystylish.domain.travel.ai.TravelAiPromptBuilder;
-import org.example.staystylish.domain.travel.consts.TravelOutfitErrorCode;
-import org.example.staystylish.domain.travel.dto.request.TravelOutfitRequest;
-import org.example.staystylish.domain.travel.dto.response.AiTravelJson;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitDetailResponse;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.AiOutfit;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitSummaryResponse;
-import org.example.staystylish.domain.travel.entity.TravelOutfit;
-import org.example.staystylish.domain.travel.repository.TravelOutfitRepository;
+import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
+import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
+import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitErrorCode;
+import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
+import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
+import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
+import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.example.staystylish.domain.weather.client.WeatherApiClient;
 import org.example.staystylish.domain.weather.client.WeatherApiClient.Daily;

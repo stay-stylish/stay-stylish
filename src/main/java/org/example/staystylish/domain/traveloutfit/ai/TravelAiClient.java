@@ -1,8 +1,8 @@
-package org.example.staystylish.domain.travel.ai;
+package org.example.staystylish.domain.traveloutfit.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.domain.travel.dto.response.AiTravelJson;
+import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Component;
 
