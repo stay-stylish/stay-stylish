@@ -1,6 +1,6 @@
-package org.example.staystylish.domain.product.repository;
+package org.example.staystylish.domain.productclassification.repository;
 
-import org.example.staystylish.domain.product.entity.Product;
+import org.example.staystylish.domain.productclassification.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**

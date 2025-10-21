@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.outfit.dto.response;
+package org.example.staystylish.domain.dailyoutfit.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

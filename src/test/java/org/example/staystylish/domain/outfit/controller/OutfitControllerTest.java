@@ -1,10 +1,10 @@
 package org.example.staystylish.domain.outfit.controller;
 
-import org.example.staystylish.domain.outfit.entity.UserItemFeedback;
-import org.example.staystylish.domain.outfit.enums.LikeStatus;
-import org.example.staystylish.domain.outfit.repository.UserItemFeedbackRepository;
-import org.example.staystylish.domain.product.entity.Product;
-import org.example.staystylish.domain.product.repository.ProductRepository;
+import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
+import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
+import org.example.staystylish.domain.dailyoutfit.repository.UserItemFeedbackRepository;
+import org.example.staystylish.domain.productclassification.entity.Product;
+import org.example.staystylish.domain.productclassification.repository.ProductRepository;
 import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
