@@ -1,14 +1,16 @@
 package org.example.staystylish.domain.localweather.service;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import jakarta.annotation.PostConstruct;
 import java.net.URLEncoder;
 import org.example.staystylish.common.exception.advice.ExternalApiException;
+import org.example.staystylish.domain.localweather.dto.GpsRequest;
+import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
 import org.example.staystylish.domain.localweather.dto.WeatherItem;
 import org.example.staystylish.domain.localweather.dto.WeatherResponse;
+import org.example.staystylish.domain.localweather.entity.Region;
 import org.example.staystylish.domain.localweather.entity.Weather;
+import org.example.staystylish.domain.localweather.repository.RegionRepository;
 import org.example.staystylish.domain.localweather.repository.WeatherRepository;
-import org.example.staystylish.domain.localweather.util.GridToRegionConverter;
 import org.example.staystylish.domain.localweather.util.KmaGridConverter;
 import org.example.staystylish.domain.localweather.util.WeatherMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
 
+import java.net.URLEncoder;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -35,21 +38,26 @@ public class WeatherServiceImpl implements WeatherService {
     private final WebClient webClient;
     private final RedisTemplate<String, Object> redisTemplate;
     private final WeatherRepository weatherRepository;
+    private final RegionRepository regionRepository;
     private final String serviceKey;
     private final String baseUrl;
     private final XmlMapper xmlMapper;
+
+    private final Duration CACHE_TTL = Duration.ofMinutes(35); // Redis TTL 35분
+
 
     public WeatherServiceImpl(WebClient.Builder webClientBuilder,
                               RedisTemplate<String, Object> redisTemplate,
                               WeatherRepository weatherRepository,
                               @Value("${kma.serviceKey}") String serviceKey,
                               @Value("${kma.baseUrl}") String baseUrl) {
-        this.serviceKey = serviceKey;
-        this.baseUrl = baseUrl;
         this.webClient = webClientBuilder.baseUrl(baseUrl).build();
         this.redisTemplate = redisTemplate;
         this.weatherRepository = weatherRepository;
-        this.xmlMapper = new XmlMapper(); // XML 파서 초기화
+        this.regionRepository = regionRepository;
+        this.serviceKey = serviceKey;
+        this.baseUrl = baseUrl;
+        this.xmlMapper = new XmlMapper();
     }
 
 
@@ -57,11 +65,21 @@ public class WeatherServiceImpl implements WeatherService {
      * 사용자 위경도 기준 기상 데이터 조회
      */
     @Override
-    public Mono<WeatherResponse> getWeatherByLatLon(double lat, double lon) {
+    public Mono<WeatherResponse> getWeatherByLatLon (GpsRequest request) {
+
+        double lat = request.latitude();
+        double lon = request.longitude();
+
+        // 1️⃣ DB에서 가장 가까운 region 조회
+        Region region = regionRepository.findTopByNearest(lat, lon)
+                .orElseThrow(() -> new ExternalApiException("Region not found"));
+
+        String regionName = region.getCity().isEmpty() ? region.getProvince() : region.getCity();
 
         if (serviceKey == null || serviceKey.isBlank()) {
             return Mono.error(new ExternalApiException("KMA service key not configured"));
         }
+
 
         //  위경도 → 격자 좌표(nx, ny) 변환
         int[] xy = KmaGridConverter.latLonToGrid(lat, lon);
@@ -102,14 +120,14 @@ public class WeatherServiceImpl implements WeatherService {
                 .retrieve()
                 .bodyToMono(String.class) // XML 문자열로 받음
                 .map(xml -> {
+                    // 1) XML → WeatherResponse 변환
                     WeatherResponse response = parseWeatherItemsFromXml(xml, nx, ny, baseDate, baseTime);
 
-                    // DB 저장
-                    String region = GridToRegionConverter.toRegion(nx, ny); // 좌표 → 지역
-                    Weather weather = WeatherMapper.toWeatherEntity(response.items(), region);
+                    // 2) DB 저장
+                    Weather weather = WeatherMapper.toWeather(response.items(), regionName);
                     weatherRepository.save(weather);
 
-                    // Redis 캐시
+                    // 3) Redis 캐시 저장 (TTL 적용)
                     redisTemplate.opsForValue().set(cacheKey, response);
 
                     return response;
@@ -117,7 +135,6 @@ public class WeatherServiceImpl implements WeatherService {
                 .onErrorMap(WebClientRequestException.class,
                         ex -> new ExternalApiException("KMA request failed: " + ex.getMessage(), ex));
     }
-
     /**
      * XML → WeatherItem 리스트 변환 후 WeatherResponse 생성
      */
@@ -140,7 +157,7 @@ public class WeatherServiceImpl implements WeatherService {
                 }
             }
 
-            // item 노드 접근 (body → items → item)
+            // item 노드 접근 (items → item)
             com.fasterxml.jackson.databind.JsonNode itemsContainer = bodyNode.path("items");
             com.fasterxml.jackson.databind.JsonNode itemNodes = itemsContainer.path("item");
 
@@ -165,14 +182,9 @@ public class WeatherServiceImpl implements WeatherService {
                 "base_time", baseTime
         );
 
-        WeatherResponse response = new WeatherResponse(items, meta);
-
-        // 6️⃣ Redis 캐시에 저장 (baseDate + baseTime 기준)
-        String cacheKey = "weather:" + nx + ":" + ny + ":" + baseDate + ":" + baseTime;
-        redisTemplate.opsForValue().set(cacheKey, response);
-
-        return response;
+        return new WeatherResponse(items, meta);
     }
+
 
     // Map -> WeatherItem 변환 메서드
     // 파라미터: node : Jackson이 XML을 트리 구조(JsonNode)로 파싱한 각 <item> 노드
@@ -211,3 +223,4 @@ public class WeatherServiceImpl implements WeatherService {
         return new String[]{baseDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")), baseTime};
     }
 }
+

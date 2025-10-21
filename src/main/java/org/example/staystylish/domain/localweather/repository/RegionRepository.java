@@ -11,4 +11,5 @@ public interface RegionRepository extends JpaRepository<Region, Long> {
 
     @Query("SELECT r FROM Region r " +
             "ORDER BY ((r.longitude - :lon)*(r.longitude - :lon) + (r.latitude - :lat)*(r.latitude - :lat)) ASC")
-    Optional<Region> findNearestRegion(@Param("lat") double lat, @Param("lon") double lon
+    Optional<Region> findTopByNearest(@Param("lat") double lat, @Param("lon") double lon);
+}
