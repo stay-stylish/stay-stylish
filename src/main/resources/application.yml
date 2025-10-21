@@ -69,6 +69,7 @@ logging:
 weatherapi:
   base-url: https://api.weatherapi.com/v1
   key: ${WEATHER_API_KEY}
+<<<<<<< HEAD
 
 server:
   port: 8080
@@ -76,3 +77,5 @@ server:
 kma:
   serviceKey: ${KMA_SERVICE_KEY}
   baseUrl: https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0 # 동네예보조회서비스 Call Back URL
+=======
+>>>>>>> origin/dev

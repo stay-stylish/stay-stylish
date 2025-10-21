@@ -31,7 +31,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+<<<<<<< HEAD
                         .requestMatchers("/api/v1/auth/**", "/oauth2/**", "api/v1/weather/*").permitAll()
+=======
+                        .requestMatchers("/api/v1/auth/**", "/oauth2/**").permitAll()
+>>>>>>> origin/dev
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
