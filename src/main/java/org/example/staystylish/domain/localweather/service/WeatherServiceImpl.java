@@ -6,8 +6,11 @@ import java.net.URLEncoder;
 import org.example.staystylish.common.exception.advice.ExternalApiException;
 import org.example.staystylish.domain.localweather.dto.WeatherItem;
 import org.example.staystylish.domain.localweather.dto.WeatherResponse;
+import org.example.staystylish.domain.localweather.entity.Weather;
 import org.example.staystylish.domain.localweather.repository.WeatherRepository;
+import org.example.staystylish.domain.localweather.util.GridToRegionConverter;
 import org.example.staystylish.domain.localweather.util.KmaGridConverter;
+import org.example.staystylish.domain.localweather.util.WeatherMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -49,12 +52,6 @@ public class WeatherServiceImpl implements WeatherService {
         this.xmlMapper = new XmlMapper(); // XML 파서 초기화
     }
 
-    @PostConstruct
-    public void init() {
-        System.out.println("KMA Service Key = " + serviceKey);
-        System.out.println("KMA Base URL = " + baseUrl);
-
-    }
 
     /**
      * 사용자 위경도 기준 기상 데이터 조회
@@ -66,22 +63,22 @@ public class WeatherServiceImpl implements WeatherService {
             return Mono.error(new ExternalApiException("KMA service key not configured"));
         }
 
-        // 1️⃣ 위경도 → 격자 좌표(nx, ny) 변환
+        //  위경도 → 격자 좌표(nx, ny) 변환
         int[] xy = KmaGridConverter.latLonToGrid(lat, lon);
         int nx = xy[0];
         int ny = xy[1];
 
-        // 2️⃣ 조회 기준 baseDate / baseTime 계산
+        // 조회 기준 baseDate / baseTime 계산
         String[] base = getBaseDateTime();
         String baseDate = base[0];
         String baseTime = base[1];
 
-        // 3️⃣ Redis 캐시 확인
+        // Redis 캐시 확인
         String cacheKey = "weather:" + nx + ":" + ny + ":" + baseDate + ":" + baseTime;
         WeatherResponse cached = (WeatherResponse) redisTemplate.opsForValue().get(cacheKey);
         if (cached != null) return Mono.just(cached);
 
-        // 4️⃣ 인증키 URL 인코딩
+        // 인증키 URL 인코딩
         String encodedKey;
         try {
             encodedKey = URLEncoder.encode(serviceKey, "UTF-8");
@@ -89,7 +86,7 @@ public class WeatherServiceImpl implements WeatherService {
             return Mono.error(new ExternalApiException("Failed to encode service key", e));
         }
 
-        // 5️⃣ WebClient 호출 (OBS 초단기실황 API)
+        // WebClient 호출 (OBS 초단기실황 API)
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/getUltraSrtNcst") // OBS 전용 엔드포인트
@@ -104,7 +101,19 @@ public class WeatherServiceImpl implements WeatherService {
                         .build())
                 .retrieve()
                 .bodyToMono(String.class) // XML 문자열로 받음
-                .map(xml -> parseWeatherItemsFromXml(xml, nx, ny, baseDate, baseTime))
+                .map(xml -> {
+                    WeatherResponse response = parseWeatherItemsFromXml(xml, nx, ny, baseDate, baseTime);
+
+                    // DB 저장
+                    String region = GridToRegionConverter.toRegion(nx, ny); // 좌표 → 지역
+                    Weather weather = WeatherMapper.toWeatherEntity(response.items(), region);
+                    weatherRepository.save(weather);
+
+                    // Redis 캐시
+                    redisTemplate.opsForValue().set(cacheKey, response);
+
+                    return response;
+                })
                 .onErrorMap(WebClientRequestException.class,
                         ex -> new ExternalApiException("KMA request failed: " + ex.getMessage(), ex));
     }
@@ -131,11 +140,11 @@ public class WeatherServiceImpl implements WeatherService {
                 }
             }
 
-            // ✅ item 노드 접근 (body → items → item)
+            // item 노드 접근 (body → items → item)
             com.fasterxml.jackson.databind.JsonNode itemsContainer = bodyNode.path("items");
             com.fasterxml.jackson.databind.JsonNode itemNodes = itemsContainer.path("item");
 
-            // ✅ item이 배열인지 단일 객체인지 구분하여 처리
+            // item이 배열인지 단일 객체인지 구분하여 처리
             if (itemNodes.isArray()) {
                 for (com.fasterxml.jackson.databind.JsonNode itemNode : itemNodes) {
                     items.add(mapToWeatherItemNode(itemNode));
