@@ -1,16 +1,17 @@
-package org.example.staystylish.domain.travel.dto.response;
+package org.example.staystylish.domain.traveloutfit.dto.response;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import org.example.staystylish.domain.travel.entity.TravelOutfit;
+import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 
 public record TravelOutfitDetailResponse(
         Long travelId,
         Long userId,
         String country,
         String city,
-        String startDate,
-        String endDate,
+        LocalDate startDate,
+        LocalDate endDate,
         WeatherSummary weatherSummary,
         JsonNode culturalConstraints,
         JsonNode aiOutfitJson,
@@ -22,8 +23,8 @@ public record TravelOutfitDetailResponse(
                 outfit.getUserId(),
                 outfit.getCountry(),
                 outfit.getCity(),
-                outfit.getStartDate().toString(), // 현재는 문자열 규격 사용
-                outfit.getEndDate().toString(),
+                outfit.getStartDate(),
+                outfit.getEndDate(),
                 new WeatherSummary(
                         outfit.getAvgTemperature(),
                         outfit.getAvgHumidity(),

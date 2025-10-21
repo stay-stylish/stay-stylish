@@ -10,9 +10,7 @@ import java.util.List;
  */
 public record ProductClassificationResponse(
         String category,
-        @JsonProperty("sub_category")
-        String subCategory,
-        @JsonProperty("style_tags")
-        List<String> styleTags
+        @JsonProperty("sub_category") String subCategory,
+        @JsonProperty("style_tags") List<String> styleTags
 ) {
 }

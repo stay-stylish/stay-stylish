@@ -1,9 +1,9 @@
-package org.example.staystylish.domain.travel.dto.response;
+package org.example.staystylish.domain.traveloutfit.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.AiOutfit.OutfitSet;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.CulturalConstraints;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit.OutfitSet;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.CulturalConstraints;
 
 public record AiTravelJson(
         @JsonProperty("summary") String summary,
