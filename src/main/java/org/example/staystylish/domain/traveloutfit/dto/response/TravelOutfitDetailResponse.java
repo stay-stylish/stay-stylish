@@ -23,7 +23,7 @@ public record TravelOutfitDetailResponse(
                 outfit.getUserId(),
                 outfit.getCountry(),
                 outfit.getCity(),
-                outfit.getStartDate(), // 현재는 문자열 규격 사용
+                outfit.getStartDate(),
                 outfit.getEndDate(),
                 new WeatherSummary(
                         outfit.getAvgTemperature(),
