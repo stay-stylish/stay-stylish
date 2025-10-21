@@ -11,7 +11,6 @@ public record SignupRequest(
         @Email @NotBlank String email,
         @NotBlank @Size(min = 8, message = "비밀번호는 8자 이상이어야 합니다.") String password,
         @NotBlank String nickname,
-        String region,
         String stylePreference,
         @Pattern(regexp = "^(?i)MALE|FEMALE$", message = "gender는 MALE 또는 FEMALE만 가능합니다.")
         String gender,
@@ -24,7 +23,6 @@ public record SignupRequest(
                 .email(email)
                 .password(encodedPassword)
                 .nickname(nickname)
-                .region(region)
                 .stylePreference(stylePreference)
                 .gender(Gender.valueOf(gender.toUpperCase()))
                 .providerId(providerId)
@@ -32,8 +30,8 @@ public record SignupRequest(
     }
 
     public static SignupRequest of(String email, String password, String nickname,
-                                   String region, String stylePreference,
+                                   String stylePreference,
                                    String gender, String provider, String providerId) {
-        return new SignupRequest(email, password, nickname, region, stylePreference, gender, provider, providerId);
+        return new SignupRequest(email, password, nickname, stylePreference, gender, provider, providerId);
     }
 }

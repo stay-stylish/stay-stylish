@@ -51,7 +51,6 @@ class AuthServiceTest {
                 "test@example.com",
                 "password123",
                 "수영",
-                "서울",
                 "스트릿",
                 "MALE",
                 "LOCAL",
@@ -63,7 +62,6 @@ class AuthServiceTest {
                 .email("test@example.com")
                 .password("encoded_pw")
                 .nickname("수영")
-                .region("서울")
                 .stylePreference("스트릿")
                 .gender(Gender.MALE)
                 .role(Role.USER)
