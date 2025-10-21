@@ -1,25 +1,26 @@
-package org.example.staystylish.domain.travel.service;
+package org.example.staystylish.domain.traveloutfit.service;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.exception.GlobalException;
-import org.example.staystylish.domain.travel.ai.TravelAiClient;
-import org.example.staystylish.domain.travel.ai.TravelAiPromptBuilder;
-import org.example.staystylish.domain.travel.consts.TravelOutfitErrorCode;
-import org.example.staystylish.domain.travel.dto.request.TravelOutfitRequest;
-import org.example.staystylish.domain.travel.dto.response.AiTravelJson;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitDetailResponse;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitResponse.AiOutfit;
-import org.example.staystylish.domain.travel.dto.response.TravelOutfitSummaryResponse;
-import org.example.staystylish.domain.travel.entity.TravelOutfit;
-import org.example.staystylish.domain.travel.repository.TravelOutfitRepository;
+import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
+import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
+import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitErrorCode;
+import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
+import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
+import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
+import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.example.staystylish.domain.weather.client.WeatherApiClient;
 import org.example.staystylish.domain.weather.client.WeatherApiClient.Daily;
@@ -33,6 +34,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class TravelOutfitService {
 
+    private static final int MAX_FORECAST_DAYS = 14;
     private final WeatherApiClient weatherApiClient;
     private final TravelOutfitRepository travelOutfitRepository;
     private final TravelAiClient aiClient;
@@ -44,9 +46,17 @@ public class TravelOutfitService {
                                                      TravelOutfitRequest request,
                                                      Gender gender) {
 
-        // 기간 검증 로직 (여행 기간이 1일 미만이거나 14일 초과 시 예외 처리 -> 날씨 API가 14일 예보만 가능)
-        long days = DAYS.between(request.startDate(), request.endDate()) + 1;
-        if (days < 1 || days > 14) {
+        // 기간 검증 로직1 (종료일이 시작일보다 앞이면 오류 발생)
+        final LocalDate start = request.startDate();
+        final LocalDate end = request.endDate();
+
+        if (end.isBefore(start)) {
+            throw new GlobalException(TravelOutfitErrorCode.INVALID_PERIOD);
+        }
+
+        // 기간 검증 로직2 (14일 초과 시 예외 처리 -> 날씨 API가 14일 예보만 가능)
+        final long days = DAYS.between(start, end) + 1;
+        if (days > MAX_FORECAST_DAYS) {
             throw new GlobalException(TravelOutfitErrorCode.INVALID_PERIOD);
         }
 

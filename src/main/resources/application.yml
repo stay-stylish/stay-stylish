@@ -64,3 +64,7 @@ logging:
 weatherapi:
   base-url: https://api.weatherapi.com/v1
   key: ${WEATHER_API_KEY}
+
+app:
+  oauth:
+    redirect-uri: ${OAUTH_REDIRECT_URI}
