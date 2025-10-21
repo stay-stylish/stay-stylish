@@ -1,20 +1,30 @@
 package org.example.staystylish.domain.traveloutfit.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
  * AI 모델과 통신 및 응답 처리 담당 Client
  */
+@Slf4j
 @Component
-@RequiredArgsConstructor
 public class TravelAiClient {
 
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
+
+    // 생성자 주입
+    public TravelAiClient(
+            @Qualifier("chatClientOpenAi") ChatClient chatClient,
+            ObjectMapper objectMapper
+    ) {
+        this.chatClient = chatClient;
+        this.objectMapper = objectMapper;
+    }
 
     // chatClient를 사용해서 프롬프트를 AI 모델로 전송하고 응답 받기
     public String callForJson(String prompt) {
