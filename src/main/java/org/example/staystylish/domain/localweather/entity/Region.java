@@ -16,13 +16,13 @@ public class Region {
     private Long id;
 
     @Column(name = "region_province")
-    private String province;
+    private String province; // 시 (예: 서울 특별시)
 
     @Column(name = "region_city")
-    private String city;
+    private String city; // 구 (예: 종로구)
 
     @Column(name = "region_district")
-    private String district;
+    private String district; // 동 (예:사직동)
 
     private Double longitude;
     private Double latitude;

@@ -21,7 +21,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
 
-import java.net.URLEncoder;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -41,7 +40,6 @@ public class WeatherServiceImpl implements WeatherService {
     private final WeatherRepository weatherRepository;
     private final RegionRepository regionRepository;
     private final String serviceKey;
-    private final String baseUrl;
     private final XmlMapper xmlMapper;
 
     private final Duration CACHE_TTL = Duration.ofMinutes(35); // Redis TTL 35분
@@ -58,21 +56,20 @@ public class WeatherServiceImpl implements WeatherService {
         this.weatherRepository = weatherRepository;
         this.regionRepository = regionRepository;
         this.serviceKey = serviceKey;
-        this.baseUrl = baseUrl;
         this.xmlMapper = new XmlMapper();
     }
-
 
     /**
      * 사용자 위경도 기준 기상 데이터 조회
      */
+
     @Override
     public Mono<UserWeatherResponse> getWeatherByLatLon(GpsRequest request) {
 
         double lat = request.latitude();
         double lon = request.longitude();
 
-        // 1️⃣ DB에서 가장 가까운 region 조회
+        // DB에서 가장 가까운 region 조회
         Region region = regionRepository.findNearestRegions(lat, lon, PageRequest.of(0, 1))
                 .stream()
                 .findFirst()
@@ -102,7 +99,7 @@ public class WeatherServiceImpl implements WeatherService {
             WeatherResponse cached = new com.fasterxml.jackson.databind.ObjectMapper()
                     .convertValue(cachedObj, WeatherResponse.class);
 
-            // 💡 캐시가 있을 경우에도 최종 DTO로 변환하여 반환해야 합니다.
+            // 캐시가 있을 경우에도 최종 DTO로 변환하여 반환
             return Mono.just(WeatherMapper.toUserWeatherResponse(cached.items(), region));
         }
 
@@ -133,9 +130,7 @@ public class WeatherServiceImpl implements WeatherService {
                     WeatherResponse response = parseWeatherItemsFromXml(xml, nx, ny, baseDate, baseTime);
 
                     List<WeatherItem> items = response.items();
-                    String district = region.getDistrict(); // DB 저장을 위해 지역명(String) 사용
-
-                    // 💡 DB 저장: WeatherMapper.toWeather 호출 시 확보된 지역명(String) 사용
+                    // DB 저장: WeatherMapper.toWeather 호출 시 확보된 지역명(String) 사용
                     Weather weather = WeatherMapper.toWeather(items, region);
                     weatherRepository.save(weather);
 
@@ -145,7 +140,7 @@ public class WeatherServiceImpl implements WeatherService {
                     return response; // 다음 map 체인을 위해 WeatherResponse 반환
                 })
 
-                // 💡 최종 DTO 변환: WeatherResponse를 UserWeatherResponse로 변환합니다.
+                // 최종 DTO 변환: WeatherResponse를 UserWeatherResponse로 변환
                 .map(weatherResponse -> WeatherMapper.toUserWeatherResponse(weatherResponse.items(), region))
                 .onErrorMap(WebClientRequestException.class,
                         ex -> new ExternalApiException("KMA request failed: " + ex.getMessage(), ex));
@@ -154,6 +149,7 @@ public class WeatherServiceImpl implements WeatherService {
     /**
      * XML → WeatherItem 리스트 변환 후 WeatherResponse 생성
      */
+
     private WeatherResponse parseWeatherItemsFromXml(String xml, int nx, int ny, String baseDate, String baseTime) {
         List<WeatherItem> items = new ArrayList<>();
 
@@ -202,9 +198,10 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
 
-    // Map -> WeatherItem 변환 메서드
-    // 파라미터: node : Jackson이 XML을 트리 구조(JsonNode)로 파싱한 각 <item> 노드
-    // XML → JsonNode → WeatherItem 과정에서 한 노드(item)를 객체로 만드는 역할
+    /** Map -> WeatherItem 변환 메서드
+     * 파라미터: node : Jackson이 XML을 트리 구조(JsonNode)로 파싱한 각 <item> 노드
+     * XML → JsonNode → WeatherItem 과정에서 한 노드(item)를 객체로 만드는 역할
+     */
     private WeatherItem mapToWeatherItemNode(com.fasterxml.jackson.databind.JsonNode node) {
         return new WeatherItem(
                 node.path("category").asText(),
@@ -213,6 +210,7 @@ public class WeatherServiceImpl implements WeatherService {
                 node.path("baseTime").asText()
         );
     }
+
     /**
      * 현재 시간 기준 base_date/base_time 계산
      * OBS 초단기실황 API는 매 시각 30분에 발표
