@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.outfit.controller;
+package org.example.staystylish.domain.dailyoutfit.controller;
 
 import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
 import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
