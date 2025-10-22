@@ -65,9 +65,7 @@ public class TravelOutfitService {
         }
 
         // 날씨 조회 로직
-        List<Daily> dailyList = weatherApiClient
-                .getDailyForecast(request.city(), start, end)
-                .block();
+        List<Daily> dailyList = weatherApiClient.getDailyForecast(request.city(), start, end);
 
         if (dailyList == null || dailyList.isEmpty()) {
             throw new GlobalException(TravelOutfitErrorCode.WEATHER_FETCH_FAILED);
