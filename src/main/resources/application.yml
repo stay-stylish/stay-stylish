@@ -7,6 +7,7 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
+
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -68,3 +69,12 @@ logging:
 weatherapi:
   base-url: https://api.weatherapi.com/v1
   key: ${WEATHER_API_KEY}
+
+
+server:
+  port: 8080
+
+kma:
+  serviceKey: ${KMA_SERVICE_KEY}
+  baseUrl: https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0 # 동네예보조회서비스 Call Back URL
+
