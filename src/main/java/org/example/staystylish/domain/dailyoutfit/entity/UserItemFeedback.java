@@ -2,6 +2,7 @@ package org.example.staystylish.domain.dailyoutfit.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.example.staystylish.common.entity.BaseEntity;
 import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
 import org.example.staystylish.domain.productclassification.entity.Product;
 import org.example.staystylish.domain.user.entity.User;
@@ -20,7 +21,7 @@ import org.example.staystylish.domain.user.entity.User;
                 )
         }
 )
-public class UserItemFeedback {
+public class UserItemFeedback extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

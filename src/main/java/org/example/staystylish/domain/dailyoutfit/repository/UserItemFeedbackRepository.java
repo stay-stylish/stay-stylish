@@ -1,9 +1,7 @@
 package org.example.staystylish.domain.dailyoutfit.repository;
 
 import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +13,5 @@ public interface UserItemFeedbackRepository extends JpaRepository<UserItemFeedba
 
     Optional<UserItemFeedback> findByUserIdAndProductId(Long userId, Long productId);
 
-    @Query("SELECT f FROM UserItemFeedback f JOIN FETCH f.product WHERE f.user.id = :userId ORDER BY f.id DESC")
-    List<UserItemFeedback> findRecentFeedbackByUserId(Long userId, Pageable pageable);
-
-    List<UserItemFeedback> findByUserId(Long userId);}
+    List<UserItemFeedback> findByUserId(Long userId);
+}

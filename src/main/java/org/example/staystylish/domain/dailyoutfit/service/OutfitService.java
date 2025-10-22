@@ -27,6 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,14 +91,20 @@ public class OutfitService {
 
         // 3. 사용자 피드백 기반 아이템 조회
         List<UserItemFeedback> userFeedbacks = userItemFeedbackRepository.findByUserId(userId);
-        Map<Long, Integer> productScores = new HashMap<>();
+        Map<Long, Double> productScores = new HashMap<>();
+
+        final double decayFactor = 0.9; // 시간 감쇠 계수 (예: 0.9)
+        final LocalDateTime now = LocalDateTime.now();
 
         for (UserItemFeedback feedback : userFeedbacks) {
             Long productId = feedback.getProduct().getId();
+            long daysBetween = ChronoUnit.DAYS.between(feedback.getCreatedAt(), now);
+            double weight = Math.pow(decayFactor, daysBetween);
+
             if (feedback.getLikeStatus() == LikeStatus.LIKE) {
-                productScores.put(productId, productScores.getOrDefault(productId, 0) + 1);
+                productScores.put(productId, productScores.getOrDefault(productId, 0.0) + weight);
             } else if (feedback.getLikeStatus() == LikeStatus.DISLIKE) {
-                productScores.put(productId, productScores.getOrDefault(productId, 0) - 1);
+                productScores.put(productId, productScores.getOrDefault(productId, 0.0) - weight);
             }
         }
 
@@ -105,9 +113,9 @@ public class OutfitService {
         // 피드백 점수를 기반으로 제품 정렬
         List<Product> userFeedbackItems = allProducts.stream()
                 .sorted((p1, p2) -> {
-                    int score1 = productScores.getOrDefault(p1.getId(), 0);
-                    int score2 = productScores.getOrDefault(p2.getId(), 0);
-                    return Integer.compare(score2, score1); // 내림차순 정렬
+                    double score1 = productScores.getOrDefault(p1.getId(), 0.0);
+                    double score2 = productScores.getOrDefault(p2.getId(), 0.0);
+                    return Double.compare(score2, score1); // 내림차순 정렬
                 })
                 .collect(Collectors.toList());
 
