@@ -24,9 +24,13 @@ public class OutfitController {
     private final OutfitService outfitService;
 
     @GetMapping("/recommendation")
-    public ResponseEntity<OutfitRecommendationResponse> getOutfitRecommendation(@AuthenticationPrincipal UserPrincipal principal) {
+    public ResponseEntity<OutfitRecommendationResponse> getOutfitRecommendation(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam double latitude,
+            @RequestParam double longitude
+    ) {
         Long userId = principal.getUser().getId();
-        OutfitRecommendationResponse response = outfitService.getOutfitRecommendation(userId);
+        OutfitRecommendationResponse response = outfitService.getOutfitRecommendation(userId, latitude, longitude);
         return ResponseEntity.ok(response);
     }
 
