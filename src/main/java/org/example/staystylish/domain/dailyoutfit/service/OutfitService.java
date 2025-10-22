@@ -27,9 +27,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 의상 추천과 관련된 비즈니스 로직을 처리하는 서비스 클래스입니다.
@@ -85,9 +87,29 @@ public class OutfitService {
             throw new GlobalException(OutfitErrorCode.WEATHER_INFO_NOT_FOUND);
         }
 
-        // 3. 사용자 피드백 기반 아이템 조회 (선택 사항)
-        // TODO: 사용자 피드백을 기반으로 아이템을 필터링하거나 가중치를 부여하는 로직 추가
-        List<Product> userFeedbackItems = productRepository.findAll(); // 현재는 모든 아이템 조회
+        // 3. 사용자 피드백 기반 아이템 조회
+        List<UserItemFeedback> userFeedbacks = userItemFeedbackRepository.findByUserId(userId);
+        Map<Long, Integer> productScores = new HashMap<>();
+
+        for (UserItemFeedback feedback : userFeedbacks) {
+            Long productId = feedback.getProduct().getId();
+            if (feedback.getLikeStatus() == LikeStatus.LIKE) {
+                productScores.put(productId, productScores.getOrDefault(productId, 0) + 1);
+            } else if (feedback.getLikeStatus() == LikeStatus.DISLIKE) {
+                productScores.put(productId, productScores.getOrDefault(productId, 0) - 1);
+            }
+        }
+
+        List<Product> allProducts = productRepository.findAll();
+
+        // 피드백 점수를 기반으로 제품 정렬
+        List<Product> userFeedbackItems = allProducts.stream()
+                .sorted((p1, p2) -> {
+                    int score1 = productScores.getOrDefault(p1.getId(), 0);
+                    int score2 = productScores.getOrDefault(p2.getId(), 0);
+                    return Integer.compare(score2, score1); // 내림차순 정렬
+                })
+                .collect(Collectors.toList());
 
         // 4. AI를 활용한 옷차림 추천
         String aiRecommendation = getAiOutfitRecommendation(

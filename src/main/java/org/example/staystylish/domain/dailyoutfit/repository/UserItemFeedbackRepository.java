@@ -17,4 +17,5 @@ public interface UserItemFeedbackRepository extends JpaRepository<UserItemFeedba
 
     @Query("SELECT f FROM UserItemFeedback f JOIN FETCH f.product WHERE f.user.id = :userId ORDER BY f.id DESC")
     List<UserItemFeedback> findRecentFeedbackByUserId(Long userId, Pageable pageable);
-}
+
+    List<UserItemFeedback> findByUserId(Long userId);}
