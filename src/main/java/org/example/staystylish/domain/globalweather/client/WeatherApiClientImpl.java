@@ -2,6 +2,7 @@ package org.example.staystylish.domain.globalweather.client;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,11 +22,12 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class WeatherApiClientImpl implements WeatherApiClient {
 
+    private static final Duration TIMEOUT = Duration.ofSeconds(3); // timeout 추가
     private final WeatherApiProperties props;
     private final WebClient weatherApiWebClient;
 
     @Override
-    public Mono<List<Daily>> getDailyForecast(String city, LocalDate start, LocalDate end) {
+    public List<Daily> getDailyForecast(String city, LocalDate start, LocalDate end) {
 
         LocalDate today = LocalDate.now();
 
@@ -38,7 +40,7 @@ public class WeatherApiClientImpl implements WeatherApiClient {
             throw new GlobalException(WeatherErrorCode.INVALID_DATE_RANGE);
         }
 
-        return weatherApiWebClient.get()
+        WeatherApiResponse response = weatherApiWebClient.get()
                 .uri(b -> b.path("/forecast.json")
                         .queryParam("key", props.key())
                         .queryParam("q", city)
@@ -58,26 +60,29 @@ public class WeatherApiClientImpl implements WeatherApiClient {
                         r.bodyToMono(String.class).flatMap(
                                 body -> Mono.error(new GlobalException(WeatherErrorCode.EXTERNAL_UNAVAILABLE))))
                 .bodyToMono(WeatherApiResponse.class)
-                .map(response -> {
-                    if (response == null || response.forecast() == null || response.forecast().forecastday() == null) {
-                        throw new GlobalException(WeatherErrorCode.PARSE_FAILED);
-                    }
+                .timeout(TIMEOUT)
+                .block();
 
-                    var list = new ArrayList<Daily>();
-                    for (var fd : response.forecast().forecastday()) {
-                        LocalDate d0 = LocalDate.parse(fd.date());
-                        if (!d0.isBefore(start) && !d0.isAfter(end)) {
-                            var d = fd.day();
-                            list.add(new Daily(
-                                    d0,
-                                    d.avgTempC(),
-                                    d.avgHumidity(),
-                                    d.dailyChanceOfRain(),
-                                    d.condition() != null ? d.condition().text() : null
-                            ));
-                        }
-                    }
-                    return list;
-                });
+        if (response == null || response.forecast() == null || response.forecast().forecastday() == null) {
+            throw new GlobalException(WeatherErrorCode.PARSE_FAILED);
+        }
+
+        var list = new ArrayList<Daily>();
+        for (var fd : response.forecast().forecastday()) {
+            LocalDate d0 = LocalDate.parse(fd.date());
+            if (!d0.isBefore(start) && !d0.isAfter(end)) {
+                var d = fd.day();
+                list.add(new Daily(
+                        d0,
+                        d.avgTempC(),
+                        d.avgHumidity(),
+                        d.dailyChanceOfRain(),
+                        d.condition() != null ? d.condition().text() : null
+                ));
+            }
+        }
+        return list;
     }
 }
+
+
