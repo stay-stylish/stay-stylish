@@ -1,19 +1,7 @@
 package org.example.staystylish.domain.dailyoutfit.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import org.example.staystylish.common.exception.GlobalException;
-import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
-import org.example.staystylish.domain.dailyoutfit.dto.response.OutfitRecommendationResponse;
-import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
-import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
-import org.example.staystylish.domain.dailyoutfit.exception.OutfitErrorCode;
-import org.example.staystylish.domain.dailyoutfit.repository.UserItemFeedbackRepository;
-import org.example.staystylish.domain.productclassification.entity.Product;
-import org.example.staystylish.domain.productclassification.repository.ProductRepository;
 import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
 import org.example.staystylish.domain.dailyoutfit.dto.response.OutfitRecommendationResponse;
 import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
@@ -33,6 +21,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 /**
  * 의상 추천과 관련된 비즈니스 로직을 처리하는 서비스 클래스입니다.
  * 날씨 정보, 사용자 피드백, AI 모델을 활용하여 맞춤형 의상을 추천합니다.
@@ -48,7 +41,6 @@ public class OutfitService {
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
 
-    public OutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductRepository productRepository, UserRepository userRepository, WeatherApiClient weatherApiClient, ChatClient chatClient, ObjectMapper objectMapper) {
     public OutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductRepository productRepository,
                          UserRepository userRepository, WeatherApiClient weatherApiClient, ChatClient chatClient,
                          ObjectMapper objectMapper) {
