@@ -39,7 +39,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
 class TravelOutfitServiceTest {
@@ -83,7 +82,7 @@ class TravelOutfitServiceTest {
         // 날씨 Mock
         var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
         when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
-                .thenReturn(Mono.just(List.of(weather)));
+                .thenReturn(List.of(weather));
 
         // AI 프롬프트 Mock
         when(promptBuilder.buildPrompt(
@@ -155,7 +154,7 @@ class TravelOutfitServiceTest {
         var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, END_DATE);
 
         when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
-                .thenReturn(Mono.just(Collections.emptyList()));
+                .thenReturn(Collections.emptyList());
 
         // when & then
         assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
@@ -173,7 +172,7 @@ class TravelOutfitServiceTest {
         // 날씨 Mock
         var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
         when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
-                .thenReturn(Mono.just(List.of(weather)));
+                .thenReturn(List.of(weather));
 
         // AI 프롬프트 Mock
         when(promptBuilder.buildPrompt(anyString(), anyString(), any(), any(), anyString(), anyString(), anyDouble(),
