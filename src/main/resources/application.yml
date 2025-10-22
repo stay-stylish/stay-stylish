@@ -72,3 +72,11 @@ weatherapi:
 app:
   oauth:
     redirect-uri: ${OAUTH_REDIRECT_URI}
+
+server:
+  port: 8080
+
+kma:
+  serviceKey: ${KMA_SERVICE_KEY}
+  baseUrl: https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0 # 동네예보조회서비스 Call Back URL
+
