@@ -19,14 +19,14 @@ import org.example.staystylish.domain.globalweather.client.WeatherApiClient;
 import org.example.staystylish.domain.globalweather.client.WeatherApiClient.Daily;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
-import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitErrorCode;
 import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
-import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
+import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJsonResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.CulturalConstraints;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
+import org.example.staystylish.domain.traveloutfit.exception.TravelOutfitErrorCode;
 import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.junit.jupiter.api.DisplayName;
@@ -92,7 +92,7 @@ class TravelOutfitServiceTest {
         when(aiClient.callForJson("테스트 프롬프트")).thenReturn(expectedAiJson);
 
         var mockCulturalConstraints = new CulturalConstraints("문화/종교 조건", Collections.emptyList());
-        var aiTravelJson = new AiTravelJson("요약", Collections.emptyList(), mockCulturalConstraints,
+        var aiTravelJson = new AiTravelJsonResponse("요약", Collections.emptyList(), mockCulturalConstraints,
                 Collections.emptyList());
 
         when(aiClient.parse(expectedAiJson)).thenReturn(aiTravelJson);

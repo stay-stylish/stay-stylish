@@ -16,15 +16,16 @@ import org.example.staystylish.domain.globalweather.client.WeatherApiClient;
 import org.example.staystylish.domain.globalweather.client.WeatherApiClient.Daily;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
-import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitErrorCode;
 import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
-import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
+import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJsonResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.RainAdvisory;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.WeatherSummary;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
+import org.example.staystylish.domain.traveloutfit.exception.TravelOutfitErrorCode;
 import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.springframework.data.domain.Page;
@@ -119,18 +120,18 @@ public class TravelOutfitService {
 
         // ai 호출 및 파싱
         String aiJson;
-        AiTravelJson aiTravelJson;
+        AiTravelJsonResponse aiTravelJsonResponse;
 
         try {
             aiJson = aiClient.callForJson(prompt); // AI 호출하여 JSON 문자열 받기
-            aiTravelJson = aiClient.parse(aiJson); // json 문자열을 파싱해서 객체로 변환
+            aiTravelJsonResponse = aiClient.parse(aiJson); // json 문자열을 파싱해서 객체로 변환
         } catch (Exception e) {
             throw new GlobalException(TravelOutfitErrorCode.AI_PARSE_FAILED);
         }
 
         // AI 응답 및 문화 정보 등을 DB에 저장하기 위해서 JsonNode 형태로 변환
-        var aiOutfit = new AiOutfit(aiTravelJson.summary(), aiTravelJson.outfits());
-        var culturalConstraints = aiTravelJson.culturalConstraints();
+        var aiOutfit = new AiOutfit(aiTravelJsonResponse.summary(), aiTravelJsonResponse.outfits());
+        var culturalConstraints = aiTravelJsonResponse.culturalConstraints();
         var aiNode = objectMapper.valueToTree(aiOutfit);
         var cultureNode = objectMapper.valueToTree(culturalConstraints);
 
@@ -142,21 +143,22 @@ public class TravelOutfitService {
         // DB 저장
         var saved = travelOutfitRepository.save(entity);
 
+        var weatherSummary = new WeatherSummary(
+                saved.getAvgTemperature(),
+                saved.getAvgHumidity(),
+                saved.getRainProbability(),
+                saved.getCondition(),
+                advisories,
+                umbrellaSummary
+        );
+
         // DTO 생성
-        return new TravelOutfitResponse(saved.getId(), saved.getUserId(), saved.getCountry(),
-                saved.getCity(), saved.getStartDate(), saved.getEndDate(),
-                new TravelOutfitResponse.WeatherSummary(
-                        saved.getAvgTemperature(),
-                        saved.getAvgHumidity(),
-                        saved.getRainProbability(),
-                        saved.getCondition(),
-                        advisories,
-                        umbrellaSummary
-                ),
+        return TravelOutfitResponse.from(
+                saved,
+                weatherSummary,
                 culturalConstraints,
                 aiOutfit,
-                aiTravelJson.safetyNotes(),
-                saved.getCreatedAt()
+                aiTravelJsonResponse.safetyNotes()
         );
     }
 
@@ -165,7 +167,9 @@ public class TravelOutfitService {
 
         Page<TravelOutfit> page = travelOutfitRepository.findByUserId(userId, pageable);
 
-        return page.map(TravelOutfitSummaryResponse::from);
+        Page<TravelOutfitSummaryResponse> summaryResponse = page.map(TravelOutfitSummaryResponse::from);
+
+        return summaryResponse;
     }
 
     @Transactional(readOnly = true)
@@ -174,7 +178,9 @@ public class TravelOutfitService {
         TravelOutfit outfit = travelOutfitRepository.findByIdAndUserId(travelId, userId)
                 .orElseThrow(() -> new GlobalException(TravelOutfitErrorCode.RECOMMENDATION_NOT_FOUND));
 
-        return TravelOutfitDetailResponse.from(outfit);
+        TravelOutfitDetailResponse response = TravelOutfitDetailResponse.from(outfit);
+
+        return response;
     }
 
     private String toKorean(Gender gender) {

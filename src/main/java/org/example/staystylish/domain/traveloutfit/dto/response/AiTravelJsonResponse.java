@@ -5,7 +5,7 @@ import java.util.List;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit.OutfitSet;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.CulturalConstraints;
 
-public record AiTravelJson(
+public record AiTravelJsonResponse(
         @JsonProperty("summary") String summary,
         @JsonProperty("outfits") List<OutfitSet> outfits,
         @JsonProperty("culturalConstraints") CulturalConstraints culturalConstraints,
