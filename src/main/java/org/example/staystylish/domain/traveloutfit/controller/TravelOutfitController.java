@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.dto.response.ApiResponse;
 import org.example.staystylish.common.dto.response.PageResponse;
 import org.example.staystylish.common.security.UserPrincipal;
-import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitSuccessCode;
+import org.example.staystylish.domain.traveloutfit.code.TravelOutfitSuccessCode;
 import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
@@ -25,6 +25,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 여행 옷차림 추천 컨트롤러. 생성/목록/상세 조회 엔드포인트를 제공, 공통 ApiResponse로 래핑해 응답
+ */
 @RestController
 @RequestMapping("/api/v1/travel-outfits")
 @RequiredArgsConstructor
@@ -32,7 +35,8 @@ public class TravelOutfitController {
 
     private final TravelOutfitService travelOutfitService;
 
-    @PostMapping("/recommendation")
+    // 여행 옷차림 추천 생성
+    @PostMapping("/recommendations")
     public ApiResponse<TravelOutfitResponse> createRecommendation(@AuthenticationPrincipal UserPrincipal principal,
                                                                   @Valid @RequestBody TravelOutfitRequest request) {
         // 로그인한 사용자 ID랑 성별 추출
@@ -50,7 +54,8 @@ public class TravelOutfitController {
         return ApiResponse.of(TravelOutfitSuccessCode.CREATED, response);
     }
 
-    @GetMapping("/recommendation")
+    // 내 추천 목록(요약) 페이징 조회
+    @GetMapping("/recommendations")
     public ApiResponse<PageResponse<TravelOutfitSummaryResponse>> getMyRecommendationsSummary(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(defaultValue = "0") int page,
@@ -66,11 +71,11 @@ public class TravelOutfitController {
         return ApiResponse.of(TravelOutfitSuccessCode.GET_RECOMMENDATIONS_SUCCESS, PageResponse.fromPage(responsePage));
     }
 
-    @GetMapping("/recommendation/{travelId}")
+    // 추천 상세 조회
+    @GetMapping("/recommendations/{travelId}")
     public ApiResponse<TravelOutfitDetailResponse> getRecommendationDetail(
             @AuthenticationPrincipal UserPrincipal principal,
-            @PathVariable Long travelId
-    ) {
+            @PathVariable Long travelId) {
 
         Long userId = principal.getUser().getId();
 

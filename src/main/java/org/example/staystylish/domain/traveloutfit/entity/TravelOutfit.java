@@ -15,6 +15,9 @@ import org.example.staystylish.common.entity.BaseEntity;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/**
+ * 여행 옷차림 추천 엔티티 - 문화 제약/AI 추천은 jsonb로 저장(PostgreSQL)
+ */
 @Entity
 @Table(name = "travel_outfit_recommendation")
 @Getter

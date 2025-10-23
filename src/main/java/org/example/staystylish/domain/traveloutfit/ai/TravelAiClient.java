@@ -2,7 +2,7 @@ package org.example.staystylish.domain.traveloutfit.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
+import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJsonResponse;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -37,10 +37,10 @@ public class TravelAiClient {
                 .trim();
     }
 
-    public AiTravelJson parse(String json) {
+    public AiTravelJsonResponse parse(String json) {
 
         try {
-            return objectMapper.readValue(json, AiTravelJson.class);
+            return objectMapper.readValue(json, AiTravelJsonResponse.class);
         } catch (Exception e) {
             throw new IllegalStateException("AI 응답 JSON 파싱 실패: " + e.getMessage(), e);
         }
