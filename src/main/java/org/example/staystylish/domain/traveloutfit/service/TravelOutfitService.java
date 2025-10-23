@@ -172,9 +172,7 @@ public class TravelOutfitService {
 
         Page<TravelOutfit> page = travelOutfitRepository.findByUserId(userId, pageable);
 
-        Page<TravelOutfitSummaryResponse> summaryResponse = page.map(TravelOutfitSummaryResponse::from);
-
-        return summaryResponse;
+        return page.map(TravelOutfitSummaryResponse::from);
     }
 
     // 추천 상세 조회
@@ -184,9 +182,7 @@ public class TravelOutfitService {
         TravelOutfit outfit = travelOutfitRepository.findByIdAndUserId(travelId, userId)
                 .orElseThrow(() -> new GlobalException(TravelOutfitErrorCode.RECOMMENDATION_NOT_FOUND));
 
-        TravelOutfitDetailResponse response = TravelOutfitDetailResponse.from(outfit);
-
-        return response;
+        return TravelOutfitDetailResponse.from(outfit);
     }
 
     // 성별을 한국어 문자열로 변환
