@@ -25,6 +25,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 여행 옷차림 추천 컨트롤러. 생성/목록/상세 조회 엔드포인트를 제공, 공통 ApiResponse로 래핑해 응답
+ */
 @RestController
 @RequestMapping("/api/v1/travel-outfits")
 @RequiredArgsConstructor

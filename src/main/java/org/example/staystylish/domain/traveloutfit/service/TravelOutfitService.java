@@ -33,6 +33,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 여행 옷차림 추천 도메인의 비즈니스 로직 추천 결과 생성/목록/상세 조회 제공
+ */
 @Service
 @RequiredArgsConstructor
 public class TravelOutfitService {
@@ -46,6 +49,7 @@ public class TravelOutfitService {
     private final TravelAiPromptBuilder promptBuilder;
     private final ObjectMapper objectMapper;
 
+    // 여행 옷차림 추천 생성
     @Transactional
     public TravelOutfitResponse createRecommendation(Long userId,
                                                      TravelOutfitRequest request,
@@ -72,7 +76,7 @@ public class TravelOutfitService {
             throw new GlobalException(TravelOutfitErrorCode.WEATHER_FETCH_FAILED);
         }
 
-        // 여행 일 기간 동안의 날씨 정보 평균 계산
+        // 여행 일 기간 동안의 날씨 정보 평균 계산 (평균 온도/습도/강수확률)
         double totalTemp = 0.0;
         double totalHumidity = 0.0;
         double totalRainProb = 0.0;
@@ -162,6 +166,7 @@ public class TravelOutfitService {
         );
     }
 
+    // 내 추천 목록(요약) 페이징 조회
     @Transactional(readOnly = true)
     public Page<TravelOutfitSummaryResponse> getMyRecommendationsSummary(Long userId, Pageable pageable) {
 
@@ -172,6 +177,7 @@ public class TravelOutfitService {
         return summaryResponse;
     }
 
+    // 추천 상세 조회
     @Transactional(readOnly = true)
     public TravelOutfitDetailResponse getRecommendationDetail(Long userId, Long travelId) {
 
@@ -183,6 +189,7 @@ public class TravelOutfitService {
         return response;
     }
 
+    // 성별을 한국어 문자열로 변환
     private String toKorean(Gender gender) {
 
         return switch (gender) {
@@ -191,6 +198,7 @@ public class TravelOutfitService {
         };
     }
 
+    // 일자별 강수확률에 따른 우산 가이드 생성 메서드
     private List<RainAdvisory> toRainAdvisories(List<Daily> dailyList) {
 
         return dailyList.stream()
@@ -206,6 +214,7 @@ public class TravelOutfitService {
                 .toList();
     }
 
+    // 여러 일자의 우산 가이드를 요약 문자열로 변환 (예: 10/23 (80%) 우산 필수 / 10/24 (0%) 우산 없어도 됨)
     private String buildUmbrellaSummary(List<RainAdvisory> list) {
 
         if (list == null || list.isEmpty()) {

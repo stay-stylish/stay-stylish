@@ -3,6 +3,9 @@ package org.example.staystylish.domain.traveloutfit.ai;
 import java.time.LocalDate;
 import org.springframework.stereotype.Component;
 
+/**
+ * AI 프롬프트 빌더.
+ */
 @Component
 public class TravelAiPromptBuilder {
 
