@@ -50,7 +50,7 @@ public class ApiResponse<T> {
     }
 
     // 실패 응답 (데이터 없음)
-    public static ApiResponse<?> of(ErrorCode code) {
+    public static <T> ApiResponse<T> of(ErrorCode code) {
         return new ApiResponse<>(
                 false,
                 code.getMessage(),
