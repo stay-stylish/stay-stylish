@@ -1,8 +1,8 @@
-package org.example.staystylish.domain.community.exception;
+package org.example.staystylish.domain.community.consts;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.common.consts.ErrorCode;
+import org.example.staystylish.common.code.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 @Getter

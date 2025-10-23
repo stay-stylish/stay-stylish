@@ -1,18 +1,16 @@
 package org.example.staystylish.domain.community.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.staystylish.domain.community.consts.CommunityErrorCode;
 import org.example.staystylish.domain.community.dto.request.PostRequest;
 import org.example.staystylish.domain.community.dto.response.PostResponse;
 import org.example.staystylish.domain.community.entity.Post;
-import org.example.staystylish.domain.community.exception.CommunityErrorCode;
 import org.example.staystylish.domain.community.exception.CommunityException;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor

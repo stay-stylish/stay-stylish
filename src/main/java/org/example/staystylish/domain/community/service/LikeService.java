@@ -1,10 +1,10 @@
 package org.example.staystylish.domain.community.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.staystylish.domain.community.consts.CommunityErrorCode;
 import org.example.staystylish.domain.community.dto.response.LikeResponse;
 import org.example.staystylish.domain.community.entity.Like;
 import org.example.staystylish.domain.community.entity.Post;
-import org.example.staystylish.domain.community.exception.CommunityErrorCode;
 import org.example.staystylish.domain.community.exception.CommunityException;
 import org.example.staystylish.domain.community.repository.LikeRepository;
 import org.example.staystylish.domain.community.repository.PostRepository;
