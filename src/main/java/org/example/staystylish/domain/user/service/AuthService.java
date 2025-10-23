@@ -2,14 +2,13 @@ package org.example.staystylish.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.security.JwtProvider;
+import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.dto.request.LoginRequest;
 import org.example.staystylish.domain.user.dto.request.SignupRequest;
 import org.example.staystylish.domain.user.dto.response.UserResponse;
 import org.example.staystylish.domain.user.entity.User;
-import org.example.staystylish.domain.user.exception.UserErrorCode;
 import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
