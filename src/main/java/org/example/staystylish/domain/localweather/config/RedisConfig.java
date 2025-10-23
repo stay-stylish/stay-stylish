@@ -6,14 +6,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * RedisConnectionFactory Bean
- * - Redis 서버(host=localhost, port=6379) 연결 정보 설정
- * - LettuceConnectionFactory 사용: 비동기/논블로킹 Redis 클라이언트
+ * RedisConnectionFactory Bean - Redis 서버(host=localhost, port=6379) 연결 정보 설정 - LettuceConnectionFactory 사용: 비동기/논블로킹
+ * Redis 클라이언트
  */
 
 @Configuration
@@ -26,8 +24,7 @@ public class RedisConfig {
     }
 
     /**
-     * RedisTemplate Bean
-     * - Redis 연산을 쉽게 수행할 수 있도록 템플릿(template) 제공..
+     * RedisTemplate Bean - Redis 연산을 쉽게 수행할 수 있도록 템플릿(template) 제공.
      */
 
     @Bean

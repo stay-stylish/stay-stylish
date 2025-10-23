@@ -5,14 +5,14 @@ import java.net.URLEncoder;
 import org.example.staystylish.common.exception.advice.ExternalApiException;
 import org.example.staystylish.domain.localweather.dto.GpsRequest;
 import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
-import org.example.staystylish.domain.localweather.dto.WeatherItem;
-import org.example.staystylish.domain.localweather.dto.WeatherResponse;
+import org.example.staystylish.domain.localweather.dto.LocalWeatherItem;
+import org.example.staystylish.domain.localweather.dto.LocalWeatherResponse;
 import org.example.staystylish.domain.localweather.entity.Region;
-import org.example.staystylish.domain.localweather.entity.Weather;
+import org.example.staystylish.domain.localweather.entity.LocalWeather;
 import org.example.staystylish.domain.localweather.repository.RegionRepository;
-import org.example.staystylish.domain.localweather.repository.WeatherRepository;
+import org.example.staystylish.domain.localweather.repository.LocalWeatherRepository;
 import org.example.staystylish.domain.localweather.util.KmaGridConverter;
-import org.example.staystylish.domain.localweather.util.WeatherMapper;
+import org.example.staystylish.domain.localweather.util.LocalWeatherMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -26,18 +26,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * OBS 초단기실황 API 호출 및 캐시 처리 서비스
- * - 사용자의 위경도를 격자로 변환 후 기상 데이터를 조회
- * - Redis 캐시에 먼저 조회 후 없으면 API 호출
- * - XML을 Map으로 파싱하여 WeatherItem 리스트 생성
+ * OBS 초단기실황 API 호출 및 캐시 처리 서비스 - 사용자의 위경도를 격자로 변환 후 기상 데이터를 조회 - Redis 캐시에 먼저 조회 후 없으면 API 호출 - XML을 Map으로 파싱하여
+ * WeatherItem 리스트 생성
  */
 
 @Service
-public class WeatherServiceImpl implements WeatherService {
+public class LocalWeatherServiceImpl implements LocalWeatherService {
 
     private final WebClient webClient;
     private final RedisTemplate<String, Object> redisTemplate;
-    private final WeatherRepository weatherRepository;
+    private final LocalWeatherRepository localWeatherRepository;
     private final RegionRepository regionRepository;
     private final String serviceKey;
     private final XmlMapper xmlMapper;
@@ -45,15 +43,15 @@ public class WeatherServiceImpl implements WeatherService {
     private final Duration CACHE_TTL = Duration.ofMinutes(35); // Redis TTL 35분
 
 
-    public WeatherServiceImpl(WebClient.Builder webClientBuilder,
-                              RedisTemplate<String, Object> redisTemplate,
-                              WeatherRepository weatherRepository,
-                              RegionRepository regionRepository,
-                              @Value("${kma.serviceKey}") String serviceKey,
-                              @Value("${kma.baseUrl}") String baseUrl) {
+    public LocalWeatherServiceImpl(WebClient.Builder webClientBuilder,
+                                   RedisTemplate<String, Object> redisTemplate,
+                                   LocalWeatherRepository localWeatherRepository,
+                                   RegionRepository regionRepository,
+                                   @Value("${kma.serviceKey}") String serviceKey,
+                                   @Value("${kma.baseUrl}") String baseUrl) {
         this.webClient = webClientBuilder.baseUrl(baseUrl).build();
         this.redisTemplate = redisTemplate;
-        this.weatherRepository = weatherRepository;
+        this.localWeatherRepository = localWeatherRepository;
         this.regionRepository = regionRepository;
         this.serviceKey = serviceKey;
         this.xmlMapper = new XmlMapper();
@@ -62,7 +60,6 @@ public class WeatherServiceImpl implements WeatherService {
     /**
      * 사용자 위경도 기준 기상 데이터 조회
      */
-
     @Override
     public Mono<UserWeatherResponse> getWeatherByLatLon(GpsRequest request) {
 
@@ -96,11 +93,11 @@ public class WeatherServiceImpl implements WeatherService {
 
         if (cachedObj != null) {
             // LinkedHashMap → WeatherResponse 변환
-            WeatherResponse cached = new com.fasterxml.jackson.databind.ObjectMapper()
-                    .convertValue(cachedObj, WeatherResponse.class);
+            LocalWeatherResponse cached = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .convertValue(cachedObj, LocalWeatherResponse.class);
 
             // 캐시가 있을 경우에도 최종 DTO로 변환하여 반환
-            return Mono.just(WeatherMapper.toUserWeatherResponse(cached.items(), region));
+            return Mono.just(LocalWeatherMapper.toUserWeatherResponse(cached.items(), region));
         }
 
         // 인증키 URL 인코딩
@@ -127,12 +124,12 @@ public class WeatherServiceImpl implements WeatherService {
                 .retrieve()
                 .bodyToMono(String.class) // XML 문자열로 받음
                 .map(xml -> {
-                    WeatherResponse response = parseWeatherItemsFromXml(xml, nx, ny, baseDate, baseTime);
+                    LocalWeatherResponse response = parseWeatherItemsFromXml(xml, nx, ny, baseDate, baseTime);
 
-                    List<WeatherItem> items = response.items();
+                    List<LocalWeatherItem> items = response.items();
                     // DB 저장: WeatherMapper.toWeather 호출 시 확보된 지역명(String) 사용
-                    Weather weather = WeatherMapper.toWeather(items, region);
-                    weatherRepository.save(weather);
+                    LocalWeather localWeather = LocalWeatherMapper.toWeather(items, region);
+                    localWeatherRepository.save(localWeather);
 
                     // Redis 캐시 저장 (TTL 적용)
                     redisTemplate.opsForValue().set(cacheKey, response, CACHE_TTL);
@@ -141,7 +138,8 @@ public class WeatherServiceImpl implements WeatherService {
                 })
 
                 // 최종 DTO 변환: WeatherResponse를 UserWeatherResponse로 변환
-                .map(weatherResponse -> WeatherMapper.toUserWeatherResponse(weatherResponse.items(), region))
+                .map(localWeatherResponse -> LocalWeatherMapper.toUserWeatherResponse(localWeatherResponse.items(),
+                        region))
                 .onErrorMap(WebClientRequestException.class,
                         ex -> new ExternalApiException("KMA request failed: " + ex.getMessage(), ex));
     }
@@ -149,9 +147,9 @@ public class WeatherServiceImpl implements WeatherService {
     /**
      * XML → WeatherItem 리스트 변환 후 WeatherResponse 생성
      */
-
-    private WeatherResponse parseWeatherItemsFromXml(String xml, int nx, int ny, String baseDate, String baseTime) {
-        List<WeatherItem> items = new ArrayList<>();
+    private LocalWeatherResponse parseWeatherItemsFromXml(String xml, int nx, int ny, String baseDate,
+                                                          String baseTime) {
+        List<LocalWeatherItem> items = new ArrayList<>();
 
         try {
             // XML을 Jackson 트리로 파싱
@@ -169,7 +167,7 @@ public class WeatherServiceImpl implements WeatherService {
                 }
             }
 
-            // item 노드 접근 (items → item)
+            // item 노드 접근 (items → item 순서)
             com.fasterxml.jackson.databind.JsonNode itemsContainer = bodyNode.path("items");
             com.fasterxml.jackson.databind.JsonNode itemNodes = itemsContainer.path("item");
 
@@ -194,16 +192,16 @@ public class WeatherServiceImpl implements WeatherService {
                 "base_time", baseTime
         );
 
-        return new WeatherResponse(items, meta);
+        return new LocalWeatherResponse(items, meta);
     }
 
 
-    /** Map -> WeatherItem 변환 메서드
-     * 파라미터: node : Jackson이 XML을 트리 구조(JsonNode)로 파싱한 각 <item> 노드
-     * XML → JsonNode → WeatherItem 과정에서 한 노드(item)를 객체로 만드는 역할
+    /**
+     * Map -> WeatherItem 변환 메서드 파라미터: node : Jackson이 XML을 트리 구조(JsonNode)로 파싱한 각 <item> 노드 XML → JsonNode →
+     * WeatherItem 과정에서 한 노드(item)를 객체로 만드는 역할
      */
-    private WeatherItem mapToWeatherItemNode(com.fasterxml.jackson.databind.JsonNode node) {
-        return new WeatherItem(
+    private LocalWeatherItem mapToWeatherItemNode(com.fasterxml.jackson.databind.JsonNode node) {
+        return new LocalWeatherItem(
                 node.path("category").asText(),
                 node.path("obsrValue").asText(),
                 node.path("baseDate").asText(),
@@ -212,8 +210,7 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     /**
-     * 현재 시간 기준 base_date/base_time 계산
-     * OBS 초단기실황 API는 매 시각 30분에 발표
+     * 현재 시간 기준 base_date/base_time 계산 OBS 초단기실황 API는 매 시각 30분에 발표
      */
     private String[] getBaseDateTime() {
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
