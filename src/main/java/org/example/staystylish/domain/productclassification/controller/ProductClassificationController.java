@@ -1,7 +1,9 @@
 package org.example.staystylish.domain.productclassification.controller;
 
+import org.example.staystylish.common.dto.response.ApiResponse;
 import org.example.staystylish.domain.productclassification.dto.request.ProductClassificationRequest;
 import org.example.staystylish.domain.productclassification.dto.response.ProductClassificationResponse;
+import org.example.staystylish.domain.productclassification.exception.ProductClassificationSuccessCode;
 import org.example.staystylish.domain.productclassification.service.ProductClassificationService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,10 +24,10 @@ public class ProductClassificationController {
     }
 
     @PostMapping("/classify")
-    public ProductClassificationResponse classifyProduct(@RequestBody ProductClassificationRequest request) {
+    public ApiResponse<ProductClassificationResponse> classifyProduct(@RequestBody ProductClassificationRequest request) {
 
         ProductClassificationResponse response = productClassificationService.classify(request);
 
-        return response;
+        return ApiResponse.of(ProductClassificationSuccessCode.CLASSIFICATION_SUCCESS, response);
     }
 }
