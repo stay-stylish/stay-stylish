@@ -1,4 +1,4 @@
-package org.example.staystylish.common.consts;
+package org.example.staystylish.common.code;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
