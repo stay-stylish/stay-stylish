@@ -3,8 +3,8 @@ package org.example.staystylish.common.dto.response;
 import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
-import org.example.staystylish.common.consts.ErrorCode;
-import org.example.staystylish.common.consts.SuccessCode;
+import org.example.staystylish.common.code.ErrorCode;
+import org.example.staystylish.common.code.SuccessCode;
 import org.springframework.validation.FieldError;
 
 @Getter
