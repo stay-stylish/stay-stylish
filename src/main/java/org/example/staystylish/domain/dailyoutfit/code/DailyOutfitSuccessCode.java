@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.dailyoutfit.exception;
+package org.example.staystylish.domain.dailyoutfit.code;
 
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.consts.SuccessCode;

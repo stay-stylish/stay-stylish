@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.productclassification.exception;
+package org.example.staystylish.domain.productclassification.code;
 
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.consts.SuccessCode;
