@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.community.exception;
+package org.example.staystylish.domain.community.consts;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
