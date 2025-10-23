@@ -12,7 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 의상 추천 및 아이템 피드백과 관련된 API 요청을 처리하는 컨트롤러 클래스입니다.
+ * 의상 추천 및 아이템 피드백과 관련된 API 요청을 처리하는 컨트롤러 클래스
  */
 @RestController
 @RequestMapping("/api/v1/outfits")
@@ -22,6 +22,7 @@ public class DailyOutfitController {
     private final DailyOutfitService outfitService;
 
     @GetMapping("/recommendation")
+    // 사용자 ID와 GPS 정보를 기반으로 코디 추천을 제공합니다.
     public ApiResponse<DailyOutfitRecommendationResponse> getOutfitRecommendation(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam double latitude,
@@ -37,6 +38,7 @@ public class DailyOutfitController {
 
     @PostMapping("/items/{itemId}/feedback")
     @ResponseStatus(HttpStatus.CREATED)
+    // 사용자 아이템 피드백(좋아요/싫어요)을 처리합니다.
     public ApiResponse<Void> handleFeedback(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long itemId, @RequestBody FeedbackRequest request) {
 
         Long userId = principal.getUser().getId();
@@ -48,6 +50,7 @@ public class DailyOutfitController {
     }
 
     @DeleteMapping("/items/{itemId}/feedback")
+    // 사용자 아이템 피드백을 삭제합니다.
     public ApiResponse<Void> deleteFeedback(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long itemId, @RequestBody FeedbackRequest request) {
 
         Long userId = principal.getUser().getId();

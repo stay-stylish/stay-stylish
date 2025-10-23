@@ -8,8 +8,8 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
 /**
- * 상품 분류와 관련된 비즈니스 로직을 처리하는 서비스 클래스입니다.
- * AI 모델을 활용하여 상품명을 분석하고 분류 결과를 반환합니다.
+ * 상품 분류와 관련된 비즈니스 로직을 처리하는 서비스 클래스
+ * AI 모델을 활용하여 상품명을 분석하고 분류 결과를 반환
  */
 @Service
 public class ProductClassificationService {
@@ -38,6 +38,7 @@ public class ProductClassificationService {
         this.objectMapper = objectMapper;
     }
 
+    // 상품 분류 요청을 받아 AI 모델을 통해 분류 결과를 반환합니다.
     public ProductClassificationResponse classify(ProductClassificationRequest request) {
 
         // 사용자 요청 부분
@@ -59,6 +60,7 @@ public class ProductClassificationService {
         }
 
         try {
+            // AI 응답을 ProductClassificationResponse 객체로 파싱합니다.
             ProductClassificationResponse classificationResponse = objectMapper.readValue(jsonResponse, ProductClassificationResponse.class);
 
             return classificationResponse;

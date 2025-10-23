@@ -27,8 +27,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * 의상 추천과 관련된 비즈니스 로직을 처리하는 서비스 클래스입니다.
- * 날씨 정보, 사용자 피드백, AI 모델을 활용하여 맞춤형 의상을 추천합니다.
+ * 의상 추천과 관련된 비즈니스 로직을 처리하는 서비스 클래스
+ * 날씨 정보, 사용자 피드백, AI 모델을 활용하여 맞춤형 의상을 추천
  */
 @Service
 @Transactional
@@ -55,38 +55,39 @@ public class DailyOutfitService {
     @Transactional(readOnly = true)
     public DailyOutfitRecommendationResponse getOutfitRecommendation(Long userId, Double latitude, Double longitude) {
 
-        // 사용자 정보 조회
+        // 1. 사용자 정보 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
-        // 날씨 정보 조회
+        // 2. 날씨 정보 조회 (localweather 도메인 사용)
         GpsRequest gpsRequest = new GpsRequest(latitude, longitude);
         UserWeatherResponse todayWeather = weatherService.getWeatherByLatLon(gpsRequest)
                 .blockOptional()
                 .orElseThrow(() -> new GlobalException(DailyOutfitErrorCode.WEATHER_INFO_NOT_FOUND));
 
-        // 최근 피드백 조회
+        // 3. 최근 피드백 조회 (최신순 정렬)
         List<FeedbackInfoRequest> recentFeedbacks = userItemFeedbackRepository.findByUserId(userId)
                 .stream()
-                .sorted((f1, f2) -> f2.getCreatedAt().compareTo(f1.getCreatedAt()))
-                .limit(5)
+                .sorted((f1, f2) -> f2.getCreatedAt().compareTo(f1.getCreatedAt())) // 최신순으로 정렬
+                .limit(5) // 5개만 선택
                 .map(feedback -> new FeedbackInfoRequest(feedback.getProduct().getName(),
                         feedback.getLikeStatus().name()))
                 .collect(Collectors.toList());
 
-        // 프롬프트 생성
+        // 4. 프롬프트 생성
         String systemPrompt = getSystemPrompt();
         String userPrompt = buildUserPrompt(user, todayWeather, recentFeedbacks);
 
-        // AI 호출
+        // 5. AI 호출
         String jsonResponse = chatClient.prompt()
                 .system(systemPrompt)
                 .user(userPrompt)
                 .call()
                 .content();
 
-        // AI 응답 파싱
+        // 6. AI 응답 파싱
         try {
+            // AI 응답에서 JSON 부분만 추출
             int startIndex = jsonResponse.indexOf('{');
             int endIndex = jsonResponse.lastIndexOf('}');
             if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
@@ -97,6 +98,7 @@ public class DailyOutfitService {
 
             return response;
         } catch (Exception e) {
+            // 파싱 실패 시, 대체 응답 반환
             DailyOutfitRecommendationResponse fallbackResponse = DailyOutfitRecommendationResponse.from(
                     "AI 응답을 처리하는 데 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", List.of());
 
@@ -104,6 +106,7 @@ public class DailyOutfitService {
         }
     }
 
+    // AI 시스템 프롬프트를 반환합니다.
     private String getSystemPrompt() {
 
         return """
@@ -116,13 +119,14 @@ public class DailyOutfitService {
                 """;
     }
 
+    // AI 사용자 프롬프트를 생성합니다.
     private String buildUserPrompt(User user, UserWeatherResponse weather, List<FeedbackInfoRequest> feedbacks) {
 
         StringBuilder sb = new StringBuilder();
 
         sb.append("### 사용자 및 날씨 정보 ###\n");
 
-        // 날씨 데이터
+        // 날씨 데이터 추가
         if (weather != null) {
             sb.append("- 날씨: ").append(weather.sky()).append(" (").append(weather.pty()).append(")\n");
             sb.append("- 온도: ").append(String.format("%.1f°C", weather.temperature())).append("\n");
@@ -132,13 +136,13 @@ public class DailyOutfitService {
             sb.append("- 날씨: 날씨 데이터를 가져올 수 없습니다.\n");
         }
 
-        // 사용자 데이터
+        // 사용자 데이터 추가
         sb.append("- 성별: ").append(user.getGender() != null ? user.getGender().name() : "지정되지 않음").append("\n");
         sb.append("- 선호 스타일: ")
                 .append(StringUtils.hasText(user.getStylePreference()) ? user.getStylePreference() : "지정되지 않음")
                 .append("\n");
 
-        // 피드백 데이터
+        // 피드백 데이터 추가
         if (feedbacks != null && !feedbacks.isEmpty()) {
             sb.append("- 최근 피드백:\n");
             for (FeedbackInfoRequest feedback : feedbacks) {
@@ -153,16 +157,21 @@ public class DailyOutfitService {
         return sb.toString();
     }
 
+    // 사용자 피드백을 생성하거나 업데이트합니다.
     public void createFeedback(Long userId, Long itemId, LikeStatus likeStatus) {
 
+        // 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
+        // 상품 조회
         Product product = productClassificationRepository.findById(itemId)
                 .orElseThrow(() -> new GlobalException(DailyOutfitErrorCode.ITEM_NOT_FOUND));
 
+        // 기존 피드백 조회
         Optional<UserItemFeedback> existingFeedback = userItemFeedbackRepository.findByUserIdAndProductId(userId, itemId);
 
+        // 피드백이 존재하면 업데이트, 없으면 새로 생성
         existingFeedback.ifPresentOrElse(
                 feedback -> {
                     if (feedback.getLikeStatus() != likeStatus) {
@@ -176,8 +185,10 @@ public class DailyOutfitService {
         );
     }
 
+    // 사용자 피드백을 삭제합니다.
     public void deleteFeedback(Long userId, Long itemId, LikeStatus likeStatus) {
 
+        // 사용자 피드백 조회 후 삭제
         userItemFeedbackRepository.findByUserIdAndProductId(userId, itemId)
                 .ifPresent(feedback -> {
                     if (feedback.getLikeStatus() == likeStatus) {

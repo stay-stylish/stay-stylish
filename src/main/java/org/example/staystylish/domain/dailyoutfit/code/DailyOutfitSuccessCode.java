@@ -5,7 +5,7 @@ import org.example.staystylish.common.consts.SuccessCode;
 import org.springframework.http.HttpStatus;
 
 /**
- * Daily-Outfit 도메인의 성공 응답 코드를 정의하는 ENUM입니다.
+ * Daily-Outfit 도메인의 성공 응답 코드를 정의하는 ENUM
  */
 @RequiredArgsConstructor
 public enum DailyOutfitSuccessCode implements SuccessCode {

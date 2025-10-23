@@ -6,7 +6,7 @@ import org.example.staystylish.common.consts.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 /**
- * Daily-Outfit 도메인의 오류 응답 코드를 정의하는 ENUM입니다.
+ * Daily-Outfit 도메인의 오류 응답 코드를 정의하는 ENUM
  */
 @Getter
 @RequiredArgsConstructor

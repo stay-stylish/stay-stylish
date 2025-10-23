@@ -5,7 +5,7 @@ import org.example.staystylish.common.consts.SuccessCode;
 import org.springframework.http.HttpStatus;
 
 /**
- * 상품 분류 도메인의 성공 응답 코드를 정의하는 ENUM입니다.
+ * 상품 분류 도메인의 성공 응답 코드를 정의하는 ENUM
  */
 @RequiredArgsConstructor
 public enum ProductClassificationSuccessCode implements SuccessCode {

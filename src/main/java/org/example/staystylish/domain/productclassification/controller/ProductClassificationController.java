@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 상품 분류와 관련된 API 요청을 처리하는 컨트롤러 클래스입니다.
+ * 상품 분류와 관련된 API 요청을 처리하는 컨트롤러 클래스
  */
 @RestController
 @RequestMapping("/api/products")
@@ -24,6 +24,7 @@ public class ProductClassificationController {
     }
 
     @PostMapping("/classify")
+    // 상품 분류 요청을 처리하고 결과를 반환합니다.
     public ApiResponse<ProductClassificationResponse> classifyProduct(@RequestBody ProductClassificationRequest request) {
 
         ProductClassificationResponse response = productClassificationService.classify(request);
