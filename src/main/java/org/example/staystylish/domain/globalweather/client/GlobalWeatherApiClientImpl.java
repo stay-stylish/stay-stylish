@@ -9,9 +9,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.staystylish.common.exception.GlobalException;
-import org.example.staystylish.domain.globalweather.config.WeatherApiProperties;
-import org.example.staystylish.domain.globalweather.dto.WeatherApiResponse;
-import org.example.staystylish.domain.globalweather.exception.WeatherErrorCode;
+import org.example.staystylish.domain.globalweather.config.GlobalWeatherApiProperties;
+import org.example.staystylish.domain.globalweather.dto.GlobalWeatherApiResponse;
+import org.example.staystylish.domain.globalweather.exception.GlobalWeatherErrorCode;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -20,10 +20,10 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class WeatherApiClientImpl implements WeatherApiClient {
+public class GlobalWeatherApiClientImpl implements GlobalWeatherApiClient {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(3); // timeout 추가
-    private final WeatherApiProperties props;
+    private final GlobalWeatherApiProperties props;
     private final WebClient weatherApiWebClient;
 
     @Override
@@ -37,10 +37,10 @@ public class WeatherApiClientImpl implements WeatherApiClient {
 
         if (days < 1 || days > 14) {
             log.warn("잘못된 범위입니다. Start: {}, End: {}", start, end);
-            throw new GlobalException(WeatherErrorCode.INVALID_DATE_RANGE);
+            throw new GlobalException(GlobalWeatherErrorCode.INVALID_DATE_RANGE);
         }
 
-        WeatherApiResponse response = weatherApiWebClient.get()
+        GlobalWeatherApiResponse response = weatherApiWebClient.get()
                 .uri(b -> b.path("/forecast.json")
                         .queryParam("key", props.key())
                         .queryParam("q", city)
@@ -52,19 +52,19 @@ public class WeatherApiClientImpl implements WeatherApiClient {
                 .retrieve()
                 .onStatus(s -> s.value() == 429, r ->
                         r.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new GlobalException(WeatherErrorCode.RATE_LIMITED))))
+                                .flatMap(body -> Mono.error(new GlobalException(GlobalWeatherErrorCode.RATE_LIMITED))))
                 .onStatus(HttpStatusCode::is4xxClientError, r ->
                         r.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new GlobalException(WeatherErrorCode.INVALID_CITY))))
+                                .flatMap(body -> Mono.error(new GlobalException(GlobalWeatherErrorCode.INVALID_CITY))))
                 .onStatus(HttpStatusCode::is5xxServerError, r ->
                         r.bodyToMono(String.class).flatMap(
-                                body -> Mono.error(new GlobalException(WeatherErrorCode.EXTERNAL_UNAVAILABLE))))
-                .bodyToMono(WeatherApiResponse.class)
+                                body -> Mono.error(new GlobalException(GlobalWeatherErrorCode.EXTERNAL_UNAVAILABLE))))
+                .bodyToMono(GlobalWeatherApiResponse.class)
                 .timeout(TIMEOUT)
                 .block();
 
         if (response == null || response.forecast() == null || response.forecast().forecastday() == null) {
-            throw new GlobalException(WeatherErrorCode.PARSE_FAILED);
+            throw new GlobalException(GlobalWeatherErrorCode.PARSE_FAILED);
         }
 
         var list = new ArrayList<Daily>();

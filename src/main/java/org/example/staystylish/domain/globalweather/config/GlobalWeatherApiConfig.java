@@ -11,11 +11,11 @@ import org.springframework.web.reactive.function.client.WebClient;
  * WeatherAPI 연동을 위한 설정값을 담는 record application.yml의 weatherapi 값들을 매핑
  */
 @Configuration
-@EnableConfigurationProperties(WeatherApiProperties.class)
+@EnableConfigurationProperties(GlobalWeatherApiProperties.class)
 @RequiredArgsConstructor
-public class WeatherApiConfig {
+public class GlobalWeatherApiConfig {
 
-    private final WeatherApiProperties props;
+    private final GlobalWeatherApiProperties props;
 
     @Bean(name = "weatherApiWebClient")
     public WebClient weatherApiWebClient() {
