@@ -1,7 +1,7 @@
 package org.example.staystylish.common.exception;
 
 import lombok.Getter;
-import org.example.staystylish.common.consts.ErrorCode;
+import org.example.staystylish.common.code.ErrorCode;
 
 @Getter
 public class GlobalException extends RuntimeException {

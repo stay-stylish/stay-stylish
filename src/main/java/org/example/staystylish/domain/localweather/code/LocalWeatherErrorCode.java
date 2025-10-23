@@ -1,8 +1,8 @@
-package org.example.staystylish.domain.localweather.consts;
+package org.example.staystylish.domain.localweather.code;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.common.consts.ErrorCode;
+import org.example.staystylish.common.code.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 @Getter
