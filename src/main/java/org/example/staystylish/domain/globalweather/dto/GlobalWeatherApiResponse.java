@@ -8,7 +8,7 @@ import java.util.List;
  * WeatherAPI의 forecast.json 응답을 매핑하기 위한 DTO 필요한 데이터 외에는 무시하도록 설정
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record WeatherApiResponse(
+public record GlobalWeatherApiResponse(
         @JsonProperty("forecast") Forecast forecast
 ) {
 

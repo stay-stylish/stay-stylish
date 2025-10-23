@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TravelOutfitController {
 
-    private final TravelOutfitService travelOutfitService;
+    private final TravelOutfitService travelOutfitServiceImpl;
 
     // 여행 옷차림 추천 생성
     @PostMapping("/recommendations")
@@ -49,7 +49,7 @@ public class TravelOutfitController {
             gender = Gender.MALE;
         }
 
-        TravelOutfitResponse response = travelOutfitService.createRecommendation(userId, request, gender);
+        TravelOutfitResponse response = travelOutfitServiceImpl.createRecommendation(userId, request, gender);
 
         return ApiResponse.of(TravelOutfitSuccessCode.CREATED, response);
     }
@@ -66,7 +66,7 @@ public class TravelOutfitController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         Page<TravelOutfitSummaryResponse> responsePage =
-                travelOutfitService.getMyRecommendationsSummary(userId, pageable);
+                travelOutfitServiceImpl.getMyRecommendationsSummary(userId, pageable);
 
         return ApiResponse.of(TravelOutfitSuccessCode.GET_RECOMMENDATIONS_SUCCESS, PageResponse.fromPage(responsePage));
     }
@@ -79,7 +79,7 @@ public class TravelOutfitController {
 
         Long userId = principal.getUser().getId();
 
-        TravelOutfitDetailResponse response = travelOutfitService.getRecommendationDetail(userId, travelId);
+        TravelOutfitDetailResponse response = travelOutfitServiceImpl.getRecommendationDetail(userId, travelId);
 
         return ApiResponse.of(TravelOutfitSuccessCode.GET_RECOMMENDATION_DETAIL_SUCCESS, response);
     }

@@ -15,8 +15,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.example.staystylish.common.exception.GlobalException;
-import org.example.staystylish.domain.globalweather.client.WeatherApiClient;
-import org.example.staystylish.domain.globalweather.client.WeatherApiClient.Daily;
+import org.example.staystylish.domain.globalweather.client.GlobalWeatherApiClient;
+import org.example.staystylish.domain.globalweather.client.GlobalWeatherApiClient.Daily;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
 import org.example.staystylish.domain.traveloutfit.code.TravelOutfitErrorCode;
@@ -41,7 +41,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
-class TravelOutfitServiceTest {
+class TravelOutfitServiceImplTest {
 
     private final Long USER_ID = 1L;
     private final Long TRAVEL_ID = 1L;
@@ -58,9 +58,9 @@ class TravelOutfitServiceTest {
     @Mock
     TravelAiClient aiClient;
     @InjectMocks // 실제 테스트 대상
-    private TravelOutfitService travelOutfitService;
+    private TravelOutfitServiceImpl travelOutfitServiceImpl;
     @Mock
-    private WeatherApiClient weatherApiClient;
+    private GlobalWeatherApiClient globalWeatherApiClient;
     @Mock
     private TravelOutfitRepository travelOutfitRepository;
     @Mock
@@ -81,7 +81,7 @@ class TravelOutfitServiceTest {
 
         // 날씨 Mock
         var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
-        when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
+        when(globalWeatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
                 .thenReturn(List.of(weather));
 
         // AI 프롬프트 Mock
@@ -106,7 +106,7 @@ class TravelOutfitServiceTest {
         when(travelOutfitRepository.save(any(TravelOutfit.class))).thenReturn(saved);
 
         // when
-        TravelOutfitResponse response = travelOutfitService.createRecommendation(USER_ID, request, GENDER);
+        TravelOutfitResponse response = travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER);
 
         // then
         assertThat(response).isNotNull();
@@ -126,7 +126,7 @@ class TravelOutfitServiceTest {
         var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, invalidEndDate);
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.INVALID_PERIOD.getMessage());
     }
@@ -140,7 +140,7 @@ class TravelOutfitServiceTest {
         var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, invalidEndDate);
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.INVALID_PERIOD.getMessage());
     }
@@ -153,11 +153,11 @@ class TravelOutfitServiceTest {
         // given
         var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, END_DATE);
 
-        when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
+        when(globalWeatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
                 .thenReturn(Collections.emptyList());
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.WEATHER_FETCH_FAILED.getMessage());
     }
@@ -171,7 +171,7 @@ class TravelOutfitServiceTest {
 
         // 날씨 Mock
         var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
-        when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
+        when(globalWeatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
                 .thenReturn(List.of(weather));
 
         // AI 프롬프트 Mock
@@ -183,7 +183,7 @@ class TravelOutfitServiceTest {
         when(aiClient.callForJson("테스트 프롬프트")).thenThrow(new IllegalStateException("AI 파싱 실패"));
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.AI_PARSE_FAILED.getMessage());
     }
@@ -202,7 +202,8 @@ class TravelOutfitServiceTest {
         when(travelOutfitRepository.findByUserId(USER_ID, pageable)).thenReturn(responsePage);
 
         // when
-        Page<TravelOutfitSummaryResponse> result = travelOutfitService.getMyRecommendationsSummary(USER_ID, pageable);
+        Page<TravelOutfitSummaryResponse> result = travelOutfitServiceImpl.getMyRecommendationsSummary(USER_ID,
+                pageable);
 
         // then
         assertThat(result).isNotNull();
@@ -222,7 +223,7 @@ class TravelOutfitServiceTest {
                 .thenReturn(Optional.of(mockOutfit));
 
         // when
-        TravelOutfitDetailResponse response = travelOutfitService.getRecommendationDetail(USER_ID, TRAVEL_ID);
+        TravelOutfitDetailResponse response = travelOutfitServiceImpl.getRecommendationDetail(USER_ID, TRAVEL_ID);
 
         // then
         assertThat(response).isNotNull();
@@ -239,7 +240,7 @@ class TravelOutfitServiceTest {
                 .thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.getRecommendationDetail(USER_ID, TRAVEL_ID))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.getRecommendationDetail(USER_ID, TRAVEL_ID))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.RECOMMENDATION_NOT_FOUND.getMessage());
     }
