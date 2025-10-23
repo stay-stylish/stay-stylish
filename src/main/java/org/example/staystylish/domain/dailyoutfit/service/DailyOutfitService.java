@@ -3,16 +3,16 @@ package org.example.staystylish.domain.dailyoutfit.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
-import org.example.staystylish.domain.dailyoutfit.dto.response.OutfitRecommendationResponse;
+import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
 import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
 import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
-import org.example.staystylish.domain.dailyoutfit.exception.OutfitErrorCode;
+import org.example.staystylish.domain.dailyoutfit.exception.DailyOutfitErrorCode;
 import org.example.staystylish.domain.dailyoutfit.repository.UserItemFeedbackRepository;
 import org.example.staystylish.domain.localweather.dto.GpsRequest;
 import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
 import org.example.staystylish.domain.localweather.service.WeatherService;
 import org.example.staystylish.domain.productclassification.entity.Product;
-import org.example.staystylish.domain.productclassification.repository.ProductRepository;
+import org.example.staystylish.domain.productclassification.repository.ProductClassificationRepository;
 import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.exception.UserErrorCode;
 import org.example.staystylish.domain.user.exception.UserException;
@@ -27,24 +27,25 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * 의상 추천과 관련된 비즈니스 로직을 처리하는 서비스 클래스입니다. 날씨 정보, 사용자 피드백, AI 모델을 활용하여 맞춤형 의상을 추천합니다.
+ * 의상 추천과 관련된 비즈니스 로직을 처리하는 서비스 클래스입니다.
+ * 날씨 정보, 사용자 피드백, AI 모델을 활용하여 맞춤형 의상을 추천합니다.
  */
 @Service
 @Transactional
-public class OutfitService {
+public class DailyOutfitService {
 
     private final UserItemFeedbackRepository userItemFeedbackRepository;
-    private final ProductRepository productRepository;
+    private final ProductClassificationRepository productClassificationRepository;
     private final UserRepository userRepository;
     private final WeatherService weatherService;
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
 
-    public OutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductRepository productRepository,
-                         UserRepository userRepository, WeatherService weatherService, ChatClient chatClient,
-                         ObjectMapper objectMapper) {
+    public DailyOutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductClassificationRepository productClassificationRepository,
+                              UserRepository userRepository, WeatherService weatherService, ChatClient chatClient,
+                              ObjectMapper objectMapper) {
         this.userItemFeedbackRepository = userItemFeedbackRepository;
-        this.productRepository = productRepository;
+        this.productClassificationRepository = productClassificationRepository;
         this.userRepository = userRepository;
         this.weatherService = weatherService;
         this.chatClient = chatClient;
@@ -52,57 +53,59 @@ public class OutfitService {
     }
 
     @Transactional(readOnly = true)
-    public OutfitRecommendationResponse getOutfitRecommendation(Long userId, Double latitude, Double longitude) {
-        // 1. 사용자 정보 조회
+    public DailyOutfitRecommendationResponse getOutfitRecommendation(Long userId, Double latitude, Double longitude) {
+
+        // 사용자 정보 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
-        // 2. 날씨 정보 조회 (localweather 도메인 사용)
+        // 날씨 정보 조회
         GpsRequest gpsRequest = new GpsRequest(latitude, longitude);
         UserWeatherResponse todayWeather = weatherService.getWeatherByLatLon(gpsRequest)
                 .blockOptional()
-                .orElseThrow(() -> new GlobalException(OutfitErrorCode.WEATHER_INFO_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(DailyOutfitErrorCode.WEATHER_INFO_NOT_FOUND));
 
-        // 3. 최근 피드백 조회 (최신순 정렬)
+        // 최근 피드백 조회
         List<FeedbackInfoRequest> recentFeedbacks = userItemFeedbackRepository.findByUserId(userId)
                 .stream()
-                .sorted((f1, f2) -> f2.getCreatedAt().compareTo(f1.getCreatedAt())) // 최신순으로 정렬
-                .limit(5) // 5개만 선택
+                .sorted((f1, f2) -> f2.getCreatedAt().compareTo(f1.getCreatedAt()))
+                .limit(5)
                 .map(feedback -> new FeedbackInfoRequest(feedback.getProduct().getName(),
                         feedback.getLikeStatus().name()))
                 .collect(Collectors.toList());
 
-        // 4. 프롬프트 생성
+        // 프롬프트 생성
         String systemPrompt = getSystemPrompt();
         String userPrompt = buildUserPrompt(user, todayWeather, recentFeedbacks);
 
-        // 5. AI 호출 및 응답 파싱
+        // AI 호출
         String jsonResponse = chatClient.prompt()
                 .system(systemPrompt)
                 .user(userPrompt)
                 .call()
                 .content();
 
+        // AI 응답 파싱
         try {
-            // AI 응답에서 JSON 부분 추출
             int startIndex = jsonResponse.indexOf('{');
             int endIndex = jsonResponse.lastIndexOf('}');
             if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
                 jsonResponse = jsonResponse.substring(startIndex, endIndex + 1);
             }
-            OutfitRecommendationResponse response = objectMapper.readValue(jsonResponse,
-                    OutfitRecommendationResponse.class);
+
+            DailyOutfitRecommendationResponse response = objectMapper.readValue(jsonResponse, DailyOutfitRecommendationResponse.class);
+
             return response;
         } catch (Exception e) {
-            // 파싱 실패 시, 대체 응답 반환
-            // AI 응답 형식이 잘못된 경우 사용자에게 오류가 표시되지 않도록 방지
-            OutfitRecommendationResponse fallbackResponse = OutfitRecommendationResponse.from(
+            DailyOutfitRecommendationResponse fallbackResponse = DailyOutfitRecommendationResponse.from(
                     "AI 응답을 처리하는 데 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", List.of());
+
             return fallbackResponse;
         }
     }
 
     private String getSystemPrompt() {
+
         return """
                 당신은 '일타 패션'입니다. 친절하고 트렌디한 패션 추천 도우미입니다.
                 당신의 목표는 사용자 정보와 오늘의 날씨를 기반으로 개인화된 의상 추천을 제공하는 것입니다.
@@ -113,11 +116,8 @@ public class OutfitService {
                 """;
     }
 
-    private String buildUserPrompt(
-            User user,
-            UserWeatherResponse weather,
-            List<FeedbackInfoRequest> feedbacks
-    ) {
+    private String buildUserPrompt(User user, UserWeatherResponse weather, List<FeedbackInfoRequest> feedbacks) {
+
         StringBuilder sb = new StringBuilder();
 
         sb.append("### 사용자 및 날씨 정보 ###\n");
@@ -153,19 +153,15 @@ public class OutfitService {
         return sb.toString();
     }
 
-    public void addFeedback(
-            Long userId,
-            Long itemId,
-            LikeStatus likeStatus
-    ) {
+    public void createFeedback(Long userId, Long itemId, LikeStatus likeStatus) {
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
-        Product product = productRepository.findById(itemId)
-                .orElseThrow(() -> new GlobalException(OutfitErrorCode.ITEM_NOT_FOUND));
+        Product product = productClassificationRepository.findById(itemId)
+                .orElseThrow(() -> new GlobalException(DailyOutfitErrorCode.ITEM_NOT_FOUND));
 
-        Optional<UserItemFeedback> existingFeedback = userItemFeedbackRepository.findByUserIdAndProductId(userId,
-                itemId);
+        Optional<UserItemFeedback> existingFeedback = userItemFeedbackRepository.findByUserIdAndProductId(userId, itemId);
 
         existingFeedback.ifPresentOrElse(
                 feedback -> {
@@ -180,11 +176,8 @@ public class OutfitService {
         );
     }
 
-    public void removeFeedback(
-            Long userId,
-            Long itemId,
-            LikeStatus likeStatus
-    ) {
+    public void deleteFeedback(Long userId, Long itemId, LikeStatus likeStatus) {
+
         userItemFeedbackRepository.findByUserIdAndProductId(userId, itemId)
                 .ifPresent(feedback -> {
                     if (feedback.getLikeStatus() == likeStatus) {

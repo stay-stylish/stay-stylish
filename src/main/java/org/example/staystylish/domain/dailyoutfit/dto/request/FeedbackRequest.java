@@ -8,6 +8,7 @@ import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
  */
 public record FeedbackRequest(
         Long itemId,
+
         LikeStatus status
 ) {
 }

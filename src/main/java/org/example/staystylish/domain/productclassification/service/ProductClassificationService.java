@@ -41,7 +41,7 @@ public class ProductClassificationService {
     public ProductClassificationResponse classify(ProductClassificationRequest request) {
 
         // 사용자 요청 부분
-        String userMessage = "### 실제 과제 ###\\n[입력]: \"" + request.productName() + "\"\\n[출력]:";
+        String userMessage = "### 실제 과제 ###\n[입력]: \"" + request.productName() + "\"\n[출력]:";
 
         // 시스템, 사용자 요청을 구분하여 AI 호출
         String response = chatClient.prompt()
