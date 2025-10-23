@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.globalweather.consts;
+package org.example.staystylish.domain.globalweather.exception;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

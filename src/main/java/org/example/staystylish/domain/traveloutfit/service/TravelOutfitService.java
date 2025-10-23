@@ -16,13 +16,14 @@ import org.example.staystylish.domain.globalweather.client.WeatherApiClient;
 import org.example.staystylish.domain.globalweather.client.WeatherApiClient.Daily;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
-import org.example.staystylish.domain.traveloutfit.consts.TravelOutfitErrorCode;
+import org.example.staystylish.domain.traveloutfit.code.TravelOutfitErrorCode;
 import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
-import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJson;
+import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJsonResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.RainAdvisory;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.WeatherSummary;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
@@ -32,6 +33,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 여행 옷차림 추천 도메인의 비즈니스 로직 추천 결과 생성/목록/상세 조회 제공
+ */
 @Service
 @RequiredArgsConstructor
 public class TravelOutfitService {
@@ -45,6 +49,7 @@ public class TravelOutfitService {
     private final TravelAiPromptBuilder promptBuilder;
     private final ObjectMapper objectMapper;
 
+    // 여행 옷차림 추천 생성
     @Transactional
     public TravelOutfitResponse createRecommendation(Long userId,
                                                      TravelOutfitRequest request,
@@ -71,7 +76,7 @@ public class TravelOutfitService {
             throw new GlobalException(TravelOutfitErrorCode.WEATHER_FETCH_FAILED);
         }
 
-        // 여행 일 기간 동안의 날씨 정보 평균 계산
+        // 여행 일 기간 동안의 날씨 정보 평균 계산 (평균 온도/습도/강수확률)
         double totalTemp = 0.0;
         double totalHumidity = 0.0;
         double totalRainProb = 0.0;
@@ -119,18 +124,18 @@ public class TravelOutfitService {
 
         // ai 호출 및 파싱
         String aiJson;
-        AiTravelJson aiTravelJson;
+        AiTravelJsonResponse aiTravelJsonResponse;
 
         try {
             aiJson = aiClient.callForJson(prompt); // AI 호출하여 JSON 문자열 받기
-            aiTravelJson = aiClient.parse(aiJson); // json 문자열을 파싱해서 객체로 변환
+            aiTravelJsonResponse = aiClient.parse(aiJson); // json 문자열을 파싱해서 객체로 변환
         } catch (Exception e) {
             throw new GlobalException(TravelOutfitErrorCode.AI_PARSE_FAILED);
         }
 
         // AI 응답 및 문화 정보 등을 DB에 저장하기 위해서 JsonNode 형태로 변환
-        var aiOutfit = new AiOutfit(aiTravelJson.summary(), aiTravelJson.outfits());
-        var culturalConstraints = aiTravelJson.culturalConstraints();
+        var aiOutfit = new AiOutfit(aiTravelJsonResponse.summary(), aiTravelJsonResponse.outfits());
+        var culturalConstraints = aiTravelJsonResponse.culturalConstraints();
         var aiNode = objectMapper.valueToTree(aiOutfit);
         var cultureNode = objectMapper.valueToTree(culturalConstraints);
 
@@ -142,24 +147,26 @@ public class TravelOutfitService {
         // DB 저장
         var saved = travelOutfitRepository.save(entity);
 
+        var weatherSummary = new WeatherSummary(
+                saved.getAvgTemperature(),
+                saved.getAvgHumidity(),
+                saved.getRainProbability(),
+                saved.getCondition(),
+                advisories,
+                umbrellaSummary
+        );
+
         // DTO 생성
-        return new TravelOutfitResponse(saved.getId(), saved.getUserId(), saved.getCountry(),
-                saved.getCity(), saved.getStartDate(), saved.getEndDate(),
-                new TravelOutfitResponse.WeatherSummary(
-                        saved.getAvgTemperature(),
-                        saved.getAvgHumidity(),
-                        saved.getRainProbability(),
-                        saved.getCondition(),
-                        advisories,
-                        umbrellaSummary
-                ),
+        return TravelOutfitResponse.from(
+                saved,
+                weatherSummary,
                 culturalConstraints,
                 aiOutfit,
-                aiTravelJson.safetyNotes(),
-                saved.getCreatedAt()
+                aiTravelJsonResponse.safetyNotes()
         );
     }
 
+    // 내 추천 목록(요약) 페이징 조회
     @Transactional(readOnly = true)
     public Page<TravelOutfitSummaryResponse> getMyRecommendationsSummary(Long userId, Pageable pageable) {
 
@@ -168,6 +175,7 @@ public class TravelOutfitService {
         return page.map(TravelOutfitSummaryResponse::from);
     }
 
+    // 추천 상세 조회
     @Transactional(readOnly = true)
     public TravelOutfitDetailResponse getRecommendationDetail(Long userId, Long travelId) {
 
@@ -177,6 +185,7 @@ public class TravelOutfitService {
         return TravelOutfitDetailResponse.from(outfit);
     }
 
+    // 성별을 한국어 문자열로 변환
     private String toKorean(Gender gender) {
 
         return switch (gender) {
@@ -185,6 +194,7 @@ public class TravelOutfitService {
         };
     }
 
+    // 일자별 강수확률에 따른 우산 가이드 생성 메서드
     private List<RainAdvisory> toRainAdvisories(List<Daily> dailyList) {
 
         return dailyList.stream()
@@ -200,6 +210,7 @@ public class TravelOutfitService {
                 .toList();
     }
 
+    // 여러 일자의 우산 가이드를 요약 문자열로 변환 (예: 10/23 (80%) 우산 필수 / 10/24 (0%) 우산 없어도 됨)
     private String buildUmbrellaSummary(List<RainAdvisory> list) {
 
         if (list == null || list.isEmpty()) {
