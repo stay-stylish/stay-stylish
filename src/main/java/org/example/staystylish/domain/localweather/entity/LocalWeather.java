@@ -16,10 +16,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * Weather 엔티티
- *
- * - 기상청 API 또는 기타 외부 소스로부터 받은 날씨 데이터를 RDB에 저장하기 위한 클래스
- * - Redis 캐시와는 별도로, 장기 저장 및 조회/분석을 위해 DB에 저장
- * - DB 테이블: weather
+ * <p>
+ * - 기상청 API 또는 기타 외부 소스로부터 받은 날씨 데이터를 RDB에 저장하기 위한 클래스 - Redis 캐시와는 별도로, 장기 저장 및 조회/분석을 위해 DB에 저장 - DB 테이블: weather
  */
 
 @Entity
@@ -28,7 +26,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Weather {
+public class LocalWeather {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,8 +42,7 @@ public class Weather {
     private Double windSpeed;
 
     /**
-     * 예보 기준 시각
-     * - API의 base_date + base_time
+     * 예보 기준 시각 - API의 base_date + base_time
      */
 
     @Column(name = "forecast_time")
