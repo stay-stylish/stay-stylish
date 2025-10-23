@@ -10,7 +10,7 @@ import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
 import org.example.staystylish.domain.dailyoutfit.repository.UserItemFeedbackRepository;
 import org.example.staystylish.domain.localweather.dto.GpsRequest;
 import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
-import org.example.staystylish.domain.localweather.service.WeatherService;
+import org.example.staystylish.domain.localweather.service.LocalWeatherService;
 import org.example.staystylish.domain.productclassification.entity.Product;
 import org.example.staystylish.domain.productclassification.repository.ProductClassificationRepository;
 import org.example.staystylish.domain.user.code.UserErrorCode;
@@ -37,12 +37,12 @@ public class DailyOutfitService {
     private final UserItemFeedbackRepository userItemFeedbackRepository;
     private final ProductClassificationRepository productClassificationRepository;
     private final UserRepository userRepository;
-    private final WeatherService weatherService;
+    private final LocalWeatherService weatherService;
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
 
     public DailyOutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductClassificationRepository productClassificationRepository,
-                              UserRepository userRepository, WeatherService weatherService, ChatClient chatClient,
+                              UserRepository userRepository, LocalWeatherService weatherService, ChatClient chatClient,
                               ObjectMapper objectMapper) {
         this.userItemFeedbackRepository = userItemFeedbackRepository;
         this.productClassificationRepository = productClassificationRepository;

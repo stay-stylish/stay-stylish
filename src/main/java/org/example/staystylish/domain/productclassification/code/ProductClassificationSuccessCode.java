@@ -1,7 +1,7 @@
 package org.example.staystylish.domain.productclassification.code;
 
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.common.consts.SuccessCode;
+import org.example.staystylish.common.code.SuccessCode;
 import org.springframework.http.HttpStatus;
 
 /**
