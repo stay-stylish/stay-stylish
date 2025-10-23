@@ -32,7 +32,7 @@ public class ApiResponse<T> {
     }
 
     // 성공 응답 (데이터 없음)
-    public static ApiResponse<?> of(SuccessCode code) {
+    public static <T> ApiResponse<T> of(SuccessCode code) {
         return new ApiResponse<>(
                 true,
                 code.getMessage(),

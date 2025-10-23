@@ -2,12 +2,13 @@ package org.example.staystylish.domain.dailyoutfit.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.example.staystylish.common.entity.BaseEntity;
 import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
 import org.example.staystylish.domain.productclassification.entity.Product;
 import org.example.staystylish.domain.user.entity.User;
 
 /**
- * 사용자의 아이템 피드백 정보를 나타내는 엔티티 클래스입니다.
+ * 사용자의 아이템 피드백 정보를 나타내는 엔티티 클래스
  */
 @Entity
 @Getter
@@ -20,7 +21,7 @@ import org.example.staystylish.domain.user.entity.User;
                 )
         }
 )
-public class UserItemFeedback {
+public class UserItemFeedback extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,9 +51,11 @@ public class UserItemFeedback {
     }
 
     // 정적 팩토리 메소드
-    public static UserItemFeedback create(User user,
-                                          Product product,
-                                          LikeStatus likeStatus) {
+    // 새로운 UserItemFeedback 엔티티를 생성합니다.
+    public static UserItemFeedback create(
+            User user,
+            Product product,
+            LikeStatus likeStatus) {
         return new UserItemFeedback(user, product, likeStatus);
     }
 
