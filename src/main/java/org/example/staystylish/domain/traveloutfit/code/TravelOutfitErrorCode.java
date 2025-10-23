@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.traveloutfit.consts;
+package org.example.staystylish.domain.traveloutfit.code;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
