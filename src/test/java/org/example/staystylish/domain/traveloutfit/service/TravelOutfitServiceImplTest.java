@@ -41,7 +41,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
-class TravelOutfitServiceTest {
+class TravelOutfitServiceImplTest {
 
     private final Long USER_ID = 1L;
     private final Long TRAVEL_ID = 1L;
@@ -58,7 +58,7 @@ class TravelOutfitServiceTest {
     @Mock
     TravelAiClient aiClient;
     @InjectMocks // 실제 테스트 대상
-    private TravelOutfitService travelOutfitService;
+    private TravelOutfitServiceImpl travelOutfitServiceImpl;
     @Mock
     private GlobalWeatherApiClient globalWeatherApiClient;
     @Mock
@@ -106,7 +106,7 @@ class TravelOutfitServiceTest {
         when(travelOutfitRepository.save(any(TravelOutfit.class))).thenReturn(saved);
 
         // when
-        TravelOutfitResponse response = travelOutfitService.createRecommendation(USER_ID, request, GENDER);
+        TravelOutfitResponse response = travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER);
 
         // then
         assertThat(response).isNotNull();
@@ -126,7 +126,7 @@ class TravelOutfitServiceTest {
         var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, invalidEndDate);
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.INVALID_PERIOD.getMessage());
     }
@@ -140,7 +140,7 @@ class TravelOutfitServiceTest {
         var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, invalidEndDate);
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.INVALID_PERIOD.getMessage());
     }
@@ -157,7 +157,7 @@ class TravelOutfitServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.WEATHER_FETCH_FAILED.getMessage());
     }
@@ -183,7 +183,7 @@ class TravelOutfitServiceTest {
         when(aiClient.callForJson("테스트 프롬프트")).thenThrow(new IllegalStateException("AI 파싱 실패"));
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.createRecommendation(USER_ID, request, GENDER))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.createRecommendation(USER_ID, request, GENDER))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.AI_PARSE_FAILED.getMessage());
     }
@@ -202,7 +202,8 @@ class TravelOutfitServiceTest {
         when(travelOutfitRepository.findByUserId(USER_ID, pageable)).thenReturn(responsePage);
 
         // when
-        Page<TravelOutfitSummaryResponse> result = travelOutfitService.getMyRecommendationsSummary(USER_ID, pageable);
+        Page<TravelOutfitSummaryResponse> result = travelOutfitServiceImpl.getMyRecommendationsSummary(USER_ID,
+                pageable);
 
         // then
         assertThat(result).isNotNull();
@@ -222,7 +223,7 @@ class TravelOutfitServiceTest {
                 .thenReturn(Optional.of(mockOutfit));
 
         // when
-        TravelOutfitDetailResponse response = travelOutfitService.getRecommendationDetail(USER_ID, TRAVEL_ID);
+        TravelOutfitDetailResponse response = travelOutfitServiceImpl.getRecommendationDetail(USER_ID, TRAVEL_ID);
 
         // then
         assertThat(response).isNotNull();
@@ -239,7 +240,7 @@ class TravelOutfitServiceTest {
                 .thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> travelOutfitService.getRecommendationDetail(USER_ID, TRAVEL_ID))
+        assertThatThrownBy(() -> travelOutfitServiceImpl.getRecommendationDetail(USER_ID, TRAVEL_ID))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(TravelOutfitErrorCode.RECOMMENDATION_NOT_FOUND.getMessage());
     }
