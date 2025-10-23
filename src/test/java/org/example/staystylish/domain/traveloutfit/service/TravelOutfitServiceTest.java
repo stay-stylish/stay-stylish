@@ -15,8 +15,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.example.staystylish.common.exception.GlobalException;
-import org.example.staystylish.domain.globalweather.client.WeatherApiClient;
-import org.example.staystylish.domain.globalweather.client.WeatherApiClient.Daily;
+import org.example.staystylish.domain.globalweather.client.GlobalWeatherApiClient;
+import org.example.staystylish.domain.globalweather.client.GlobalWeatherApiClient.Daily;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
 import org.example.staystylish.domain.traveloutfit.code.TravelOutfitErrorCode;
@@ -60,7 +60,7 @@ class TravelOutfitServiceTest {
     @InjectMocks // 실제 테스트 대상
     private TravelOutfitService travelOutfitService;
     @Mock
-    private WeatherApiClient weatherApiClient;
+    private GlobalWeatherApiClient globalWeatherApiClient;
     @Mock
     private TravelOutfitRepository travelOutfitRepository;
     @Mock
@@ -81,7 +81,7 @@ class TravelOutfitServiceTest {
 
         // 날씨 Mock
         var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
-        when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
+        when(globalWeatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
                 .thenReturn(List.of(weather));
 
         // AI 프롬프트 Mock
@@ -153,7 +153,7 @@ class TravelOutfitServiceTest {
         // given
         var request = new TravelOutfitRequest(COUNTRY, CITY, START_DATE, END_DATE);
 
-        when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
+        when(globalWeatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
                 .thenReturn(Collections.emptyList());
 
         // when & then
@@ -171,7 +171,7 @@ class TravelOutfitServiceTest {
 
         // 날씨 Mock
         var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
-        when(weatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
+        when(globalWeatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
                 .thenReturn(List.of(weather));
 
         // AI 프롬프트 Mock

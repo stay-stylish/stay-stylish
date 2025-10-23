@@ -12,8 +12,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.exception.GlobalException;
-import org.example.staystylish.domain.globalweather.client.WeatherApiClient;
-import org.example.staystylish.domain.globalweather.client.WeatherApiClient.Daily;
+import org.example.staystylish.domain.globalweather.client.GlobalWeatherApiClient;
+import org.example.staystylish.domain.globalweather.client.GlobalWeatherApiClient.Daily;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiClient;
 import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
 import org.example.staystylish.domain.traveloutfit.code.TravelOutfitErrorCode;
@@ -43,7 +43,7 @@ public class TravelOutfitService {
     private static final int MAX_FORECAST_DAYS = 14;
     private static final int MUST_UMBRELLA = 70;
     private static final int PACK_UMBRELLA = 30;
-    private final WeatherApiClient weatherApiClient;
+    private final GlobalWeatherApiClient globalWeatherApiClient;
     private final TravelOutfitRepository travelOutfitRepository;
     private final TravelAiClient aiClient;
     private final TravelAiPromptBuilder promptBuilder;
@@ -70,7 +70,7 @@ public class TravelOutfitService {
         }
 
         // 날씨 조회 로직
-        List<Daily> dailyList = weatherApiClient.getDailyForecast(request.city(), start, end);
+        List<Daily> dailyList = globalWeatherApiClient.getDailyForecast(request.city(), start, end);
 
         if (dailyList == null || dailyList.isEmpty()) {
             throw new GlobalException(TravelOutfitErrorCode.WEATHER_FETCH_FAILED);

@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
-public enum WeatherErrorCode implements ErrorCode {
+public enum GlobalWeatherErrorCode implements ErrorCode {
 
     INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "여행 기간은 1~14일이어야 합니다."),
     INVALID_CITY(HttpStatus.BAD_REQUEST, "유효하지 않은 도시명이거나 요청 형식 오류입니다."),
