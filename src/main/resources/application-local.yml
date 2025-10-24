@@ -1,6 +1,9 @@
 # ⬇[application-local.yml] - 'local' 프로필
 
 spring:
+  autoconfigure:
+    exclude:
+      - io.awspring.cloud.autoconfigure.config.parameterstore.ParameterStoreAutoConfiguration
   #  Local DB (PostgreSQL) 설정
   datasource:
     driver-class-name: org.postgresql.Driver
