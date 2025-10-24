@@ -33,41 +33,44 @@ public class DataInitializer implements ApplicationRunner {
         log.info("Region 데이터 초기화를 시작합니다.");
 
         ClassPathResource resource = new ClassPathResource("region_grid.csv");
-        BufferedReader br = new BufferedReader(
-                new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8));
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
 
-        String line;
-        br.readLine(); // 첫 줄(헤더) 건너뛰기
+            java.util.List<Region> regions = new java.util.ArrayList<>();
+            br.readLine(); // 첫 줄(헤더) 건너뛰기
+            String line;
 
-        while ((line = br.readLine()) != null) {
-            String[] data = line.split(","); // CSV 파싱
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(","); // CSV 파싱
 
-            // CSV 데이터 순서 region_id, province, city, district, longitude, latitude
-            try {
-                // city나 district가 비어있을 수 있으므로 trim() 후 비어있는지 확인
-                String city = (data.length > 2 && !data[2].trim().isEmpty()) ? data[2].trim() : null;
-                String district = (data.length > 3 && !data[3].trim().isEmpty()) ? data[3].trim() : null;
+                // CSV 데이터 순서 region_id, province, city, district, longitude, latitude
+                try {
+                    // city나 district가 비어있을 수 있으므로 trim() 후 비어있는지 확인
+                    String city = (data.length > 2 && !data[2].trim().isEmpty()) ? data[2].trim() : null;
+                    String district = (data.length > 3 && !data[3].trim().isEmpty()) ? data[3].trim() : null;
 
-                Region region = Region.builder()
-                        .id(Long.parseLong(data[0].trim()))
-                        .province(data[1].trim())
-                        .city(city)
-                        .district(district)
-                        .longitude(Double.parseDouble(data[4].trim()))
-                        .latitude(Double.parseDouble(data[5].trim()))
-                        .build();
+                    Region region = Region.builder()
+                            .id(Long.parseLong(data[0].trim()))
+                            .province(data[1].trim())
+                            .city(city)
+                            .district(district)
+                            .longitude(Double.parseDouble(data[4].trim()))
+                            .latitude(Double.parseDouble(data[5].trim()))
+                            .build();
+                    regions.add(region);
+                } catch (NumberFormatException e) {
+                    log.error("CSV 파싱 오류 발생 (숫자 변환 실패): {}", line, e);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    log.error("CSV 파싱 오류 발생 (데이터 부족): {}", line, e);
+                } catch (Exception e) { // 그 외 예외 처리
+                    log.error("CSV 처리 중 예외 발생: {}", line, e);
+                }
+            }
 
-                regionRepository.save(region); // Repository를 통해 저장
-            } catch (NumberFormatException e) {
-                log.error("CSV 파싱 오류 발생 (숫자 변환 실패): {}", line, e);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                log.error("CSV 파싱 오류 발생 (데이터 부족): {}", line, e);
-            } catch (Exception e) { // 그 외 예외 처리
-                log.error("CSV 처리 중 예외 발생: {}", line, e);
+            if (!regions.isEmpty()) {
+                regionRepository.saveAll(regions);
             }
         }
-
-        br.close();
         log.info("Region 데이터 초기화 완료.");
     }
 }
