@@ -3,6 +3,8 @@ package org.example.staystylish.common.initializer;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.staystylish.domain.localweather.entity.Region;
@@ -36,7 +38,7 @@ public class DataInitializer implements ApplicationRunner {
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
 
-            java.util.List<Region> regions = new java.util.ArrayList<>();
+            List<Region> regions = new ArrayList<>();
             br.readLine(); // 첫 줄(헤더) 건너뛰기
             String line;
 
