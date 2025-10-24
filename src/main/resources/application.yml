@@ -36,14 +36,6 @@ spring:
         options:
           model: gpt-4o-mini
           temperature: 0.2
-    vertex:
-      ai:
-        gemini:
-          project-id: ${GOOGLE_PROJECT_ID}
-          location: us-central1
-          chat:
-            options:
-              model: gemini-2.5-pro
 
 # ⬇JWT 설정 (모든 환경 공통)
 jwt:
