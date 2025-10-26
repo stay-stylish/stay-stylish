@@ -19,12 +19,12 @@ public enum ShoppingMallLink {
 
     //특정 '카테고리 이름'을 받아 해당 쇼핑몰의 '완성된 검색 URL'을 반환하는 인스턴스 메서드.
     public String getUrl(String categoryName) {
-        String encoded = categoryName.replace(" ", "+");
+        String encodedCategory = java.net.URLEncoder.encode(categoryName, java.nio.charset.StandardCharsets.UTF_8);
         // "빈칸 채우기" 규칙 (템플릿이라는 문장에서 빈칸을 찾아서, 값으로 채워 넣어줘.)
         // 실제 String.format이 동작하려면 template 문자열에 `%s`와 같은 포맷 지정자가 있어야 함.
         // 예) template이 "https://...&q=%s"여야 인코딩된 문자열이 붙음.
 
-        return String.format(template, encoded);
+        return this.template + encodedCategory;
         //기본 템플릿(`template`)에 치환된 카테고리 이름(`encoded`)을 삽입하여 최종 URL을 생성 및 반환.
     }
     public static Map<String, String> getAllUrls(String categoryName) {
