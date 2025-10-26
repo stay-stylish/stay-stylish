@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>📍GPS 기반 날씨 조회</title>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<div class="container">
+    <h2>📍 내 위치 기반 날씨 조회</h2>
+    <button id="gpsBtn">내 위치 날씨 가져오기</button>
+
+    <div id="weather-card" class="hidden">
+        <h3 id="location"></h3>
+        <p>🌡️ 기온: <span id="temperature"></span>°C</p>
+        <p>💧 습도: <span id="humidity"></span>%</p>
+        <p>☔ 강수량: <span id="rainfall"></span>mm</p>
+        <p>🍃 바람: <span id="windSpeed"></span>m/s</p>
+        <p>⛅ 하늘 상태: <span id="sky"></span></p>
+        <p>🌧️ 강수 형태: <span id="pty"></span></p>
+    </div>
+
+    <pre id="debug"></pre>
+</div>
+
+<script src="/js/gps.js"></script>
+
+</body>
+</html>
