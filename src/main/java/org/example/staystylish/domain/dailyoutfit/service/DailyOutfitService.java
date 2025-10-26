@@ -114,30 +114,15 @@ public class DailyOutfitService {
     @Transactional(readOnly = true)
     public DailyOutfitRecommendationResponse getOutfitRecommendationWithLinks(Long userId, Double latitude, Double longitude) {
 
-        // 1️⃣ 기존 GPS 기반 추천 로직 수행 (여기서 AI 추천 응답을 받아야 함)
+        //기존 GPS 기반 추천 로직 수행 (AI 추천 응답을 받음)
         DailyOutfitRecommendationResponse aiRecommendation = getOutfitRecommendation(userId, latitude, longitude);
         String recommendationText = aiRecommendation.recommendationText();
         List<String> recommendedCategories = aiRecommendation.recommendedCategories();
 
-        // 2️⃣ 추천 카테고리별로 쇼핑몰 링크 생성
-        List<String> categoriesWithLinks = recommendedCategories.stream()
-                .map(category -> {
-                    // 각 쇼핑몰의 링크를 생성하여 문자열로 조합
-                    StringBuilder linkBuilder = new StringBuilder(category + ": ");
-                    for (ShoppingMallLink mall : ShoppingMallLink.values()) {
-                        String url = mall.getUrl(category);
-                        linkBuilder.append(mall.name()).append("=").append(url).append("; ");
-                    }
-                    return linkBuilder.toString().trim();
-                })
-                .collect(Collectors.toList());
+        // 응답 데이터를 DTO의 팩토리 메서드에 전달하여 링크 생성 및 DTO 반환.
+        return DailyOutfitRecommendationResponse.from(recommendationText, recommendedCategories);
 
-        // 3️⃣ AI 응답에 링크가 포함된 리스트를 담아 반환
-        // 실제로는 새로운 DTO를 만들거나, DailyOutfitRecommendationResponse의 구조를 변경
-        // 현재는 편의상 문자열에 링크 정보를 모두 포함
-        return DailyOutfitRecommendationResponse.from(recommendationText, categoriesWithLinks);
     }
-
 
     // AI 시스템 프롬프트를 반환합니다.
     private String getSystemPrompt() {
