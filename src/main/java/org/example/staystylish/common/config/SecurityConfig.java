@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
-                        .requestMatchers("/api/v1/auth/**", "/oauth2/**", "/api/v1/weather/*").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/oauth2/**", "/api/v1/weather/*", "/gps-weather.html").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
