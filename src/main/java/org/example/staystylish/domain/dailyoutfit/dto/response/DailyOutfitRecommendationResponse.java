@@ -1,6 +1,7 @@
 package org.example.staystylish.domain.dailyoutfit.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.example.staystylish.domain.dailyoutfit.code.ShoppingMallLink;
 
 import java.util.List;
 
@@ -13,9 +14,16 @@ public record DailyOutfitRecommendationResponse(
         String recommendationText,
 
         @JsonProperty("recommended_categories")
-        List<String> recommendedCategories
+        List<String> recommendedCategories,
+
+        @JsonProperty("recommended_links")
+                List<String> recommendedLinks
 ) {
     public static DailyOutfitRecommendationResponse from(String recommendationText, List<String> recommendedCategories) {
-        return new DailyOutfitRecommendationResponse(recommendationText, recommendedCategories);
+        List<String> links = recommendedCategories.stream()
+                .flatMap(category -> ShoppingMallLink.getAllUrls(category).values().stream()) // 모든 쇼핑몰 링크 생성
+                .toList();
+
+        return new DailyOutfitRecommendationResponse(recommendationText, recommendedCategories, links);
     }
 }
