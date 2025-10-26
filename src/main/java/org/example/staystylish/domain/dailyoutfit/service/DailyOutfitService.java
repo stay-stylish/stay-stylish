@@ -3,7 +3,7 @@ package org.example.staystylish.domain.dailyoutfit.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.dailyoutfit.code.DailyOutfitErrorCode;
-import org.example.staystylish.domain.dailyoutfit.code.ShoppingMallLink;
+import org.example.staystylish.domain.dailyoutfit.enums.ShoppingMallLink;
 import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
 import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
 import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
@@ -12,8 +12,6 @@ import org.example.staystylish.domain.dailyoutfit.repository.UserItemFeedbackRep
 import org.example.staystylish.domain.localweather.dto.GpsRequest;
 import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
 import org.example.staystylish.domain.localweather.service.LocalWeatherService;
-import org.example.staystylish.domain.productclassification.dto.request.ProductClassificationRequest;
-import org.example.staystylish.domain.productclassification.dto.response.ProductClassificationResponse;
 import org.example.staystylish.domain.productclassification.entity.Product;
 import org.example.staystylish.domain.productclassification.repository.ProductClassificationRepository;
 import org.example.staystylish.domain.productclassification.service.ProductClassificationService;
@@ -135,8 +133,8 @@ public class DailyOutfitService {
                 .collect(Collectors.toList());
 
         // 3️⃣ AI 응답에 링크가 포함된 리스트를 담아 반환
-        // 실제로는 새로운 DTO를 만들거나, DailyOutfitRecommendationResponse의 구조를 변경해야 합니다.
-        // 현재는 편의상 문자열에 링크 정보를 모두 포함시킵니다.
+        // 실제로는 새로운 DTO를 만들거나, DailyOutfitRecommendationResponse의 구조를 변경
+        // 현재는 편의상 문자열에 링크 정보를 모두 포함
         return DailyOutfitRecommendationResponse.from(recommendationText, categoriesWithLinks);
     }
 
