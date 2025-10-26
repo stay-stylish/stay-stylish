@@ -3,6 +3,7 @@ package org.example.staystylish.domain.dailyoutfit.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.dailyoutfit.code.DailyOutfitErrorCode;
+import org.example.staystylish.domain.dailyoutfit.code.ShoppingMallLink;
 import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
 import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
 import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
@@ -11,8 +12,11 @@ import org.example.staystylish.domain.dailyoutfit.repository.UserItemFeedbackRep
 import org.example.staystylish.domain.localweather.dto.GpsRequest;
 import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
 import org.example.staystylish.domain.localweather.service.LocalWeatherService;
+import org.example.staystylish.domain.productclassification.dto.request.ProductClassificationRequest;
+import org.example.staystylish.domain.productclassification.dto.response.ProductClassificationResponse;
 import org.example.staystylish.domain.productclassification.entity.Product;
 import org.example.staystylish.domain.productclassification.repository.ProductClassificationRepository;
+import org.example.staystylish.domain.productclassification.service.ProductClassificationService;
 import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.exception.UserException;
@@ -40,9 +44,10 @@ public class DailyOutfitService {
     private final LocalWeatherService weatherService;
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
+    private final ProductClassificationService productClassificationService;
 
     public DailyOutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductClassificationRepository productClassificationRepository,
-                              UserRepository userRepository, LocalWeatherService weatherService, ChatClient chatClient,
+                              UserRepository userRepository, LocalWeatherService weatherService, ChatClient chatClient,  ProductClassificationService productClassificationService,
                               ObjectMapper objectMapper) {
         this.userItemFeedbackRepository = userItemFeedbackRepository;
         this.productClassificationRepository = productClassificationRepository;
@@ -50,6 +55,7 @@ public class DailyOutfitService {
         this.weatherService = weatherService;
         this.chatClient = chatClient;
         this.objectMapper = objectMapper;
+        this.productClassificationService = productClassificationService;
     }
 
     @Transactional(readOnly = true)
@@ -105,6 +111,35 @@ public class DailyOutfitService {
             return fallbackResponse;
         }
     }
+
+    // 변환용 메서드
+    @Transactional(readOnly = true)
+    public DailyOutfitRecommendationResponse getOutfitRecommendationWithLinks(Long userId, Double latitude, Double longitude) {
+
+        // 1️⃣ 기존 GPS 기반 추천 로직 수행 (여기서 AI 추천 응답을 받아야 함)
+        DailyOutfitRecommendationResponse aiRecommendation = getOutfitRecommendation(userId, latitude, longitude);
+        String recommendationText = aiRecommendation.recommendationText();
+        List<String> recommendedCategories = aiRecommendation.recommendedCategories();
+
+        // 2️⃣ 추천 카테고리별로 쇼핑몰 링크 생성
+        List<String> categoriesWithLinks = recommendedCategories.stream()
+                .map(category -> {
+                    // 각 쇼핑몰의 링크를 생성하여 문자열로 조합
+                    StringBuilder linkBuilder = new StringBuilder(category + ": ");
+                    for (ShoppingMallLink mall : ShoppingMallLink.values()) {
+                        String url = mall.getUrl(category);
+                        linkBuilder.append(mall.name()).append("=").append(url).append("; ");
+                    }
+                    return linkBuilder.toString().trim();
+                })
+                .collect(Collectors.toList());
+
+        // 3️⃣ AI 응답에 링크가 포함된 리스트를 담아 반환
+        // 실제로는 새로운 DTO를 만들거나, DailyOutfitRecommendationResponse의 구조를 변경해야 합니다.
+        // 현재는 편의상 문자열에 링크 정보를 모두 포함시킵니다.
+        return DailyOutfitRecommendationResponse.from(recommendationText, categoriesWithLinks);
+    }
+
 
     // AI 시스템 프롬프트를 반환합니다.
     private String getSystemPrompt() {
