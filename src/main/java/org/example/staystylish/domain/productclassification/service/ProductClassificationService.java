@@ -3,6 +3,7 @@ package org.example.staystylish.domain.productclassification.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
 import org.example.staystylish.domain.productclassification.dto.request.ProductClassificationRequest;
 import org.example.staystylish.domain.productclassification.dto.response.ProductClassificationResponse;
 import org.example.staystylish.domain.productclassification.entity.Product;
@@ -10,6 +11,8 @@ import org.example.staystylish.domain.productclassification.repository.ProductCl
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * 상품 분류와 관련된 비즈니스 로직을 처리하는 서비스 클래스
@@ -85,5 +88,27 @@ public class ProductClassificationService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("AI 응답을 파싱하는 데 실패했습니다.", e);
         }
+    }
+
+
+    // DailyOutfitRecommendationResponse 형태로 변환
+    /**
+     * classifyAndRecommend
+     *
+     * - classify() 결과를 DailyOutfitRecommendationResponse로 변환
+     * - DailyOutfitController/Service에서 추천 텍스트 + 추천 카테고리 생성 시 사용
+     *
+     * @param request ProductClassificationRequest
+     * @return DailyOutfitRecommendationResponse
+     */
+    public DailyOutfitRecommendationResponse classifyAndRecommend(ProductClassificationRequest request) {
+        ProductClassificationResponse classificationResponse = classify(request);
+
+        //추천 문구 생성 (DailyOutfitRecommendationResponse에서 사용)
+        String recommendationText = "나에게 맞는 " + classificationResponse.subCategory() + " 보러가기";
+        //추천 카테고리 목록: styleTags 사용
+        List<String> recommendedCategories = classificationResponse.styleTags();
+        // DailyOutfitRecommendationResponse로 변환
+        return DailyOutfitRecommendationResponse.from(recommendationText, recommendedCategories);
     }
 }
