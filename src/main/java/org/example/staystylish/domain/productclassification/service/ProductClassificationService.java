@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import java.util.List;
+
 /**
  * 상품 분류와 관련된 비즈니스 로직을 처리하는 서비스 클래스
  * AI 모델을 활용하여 상품명을 분석하고 분류 결과를 반환
