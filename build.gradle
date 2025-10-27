@@ -44,7 +44,7 @@ dependencyManagement {
 
 dependencies {
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.16.0'
-    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
+
     implementation platform("org.springframework.ai:spring-ai-bom:1.0.0")
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-parameter-store'
     implementation "io.swagger.core.v3:swagger-annotations-jakarta:2.2.30"
