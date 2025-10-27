@@ -23,7 +23,7 @@ spring:
 
 app:
   oauth:
-    redirect-uri: http://localhost:8080/login/oauth2/code/google
+    redirect-uri: http://localhost:3000/oauth/success
 
 logging:
   level:

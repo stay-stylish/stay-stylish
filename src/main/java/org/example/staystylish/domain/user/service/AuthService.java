@@ -38,6 +38,11 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
+        // 탈퇴 계정 차단
+        if (user.isDeleted()) {
+            throw new UserException(UserErrorCode.USER_DELETED);
+        }
+
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new UserException(UserErrorCode.INVALID_PASSWORD);
         }
