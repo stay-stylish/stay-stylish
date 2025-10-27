@@ -1,6 +1,8 @@
 package org.example.staystylish.common.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.staystylish.common.security.CustomOAuth2UserService;
 import org.example.staystylish.common.security.JwtAuthenticationEntryPoint;
 import org.example.staystylish.common.security.JwtAuthenticationFilter;
@@ -16,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -48,7 +51,10 @@ public class SecurityConfig {
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
-                        .failureUrl("/api/v1/auth/oauth2/failure")
+                        .failureHandler((request, response, exception) -> {
+                            log.error("❌ OAuth2 로그인 실패 - 원인: {}", exception.getMessage(), exception);
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 로그인 실패");
+                        })
                 );
 
         return http.build();
