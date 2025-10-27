@@ -17,7 +17,7 @@ jobs:
           actor="${{ github.actor }}"
 
           # 리뷰어 후보 (GitHub 아이디 사용)
-          reviewers=("jihoLee0818" "HY-WG" "youngrae0317")
+          reviewers=("jihoLee0818" "HY-WG" "youngrae0317" "csy10001")
 
           # 작성자는 제외
           candidates=($(printf "%s\n" "${reviewers[@]}" | grep -v "$actor"))
