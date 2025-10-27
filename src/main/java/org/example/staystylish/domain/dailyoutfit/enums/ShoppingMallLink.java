@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
  */
 public enum ShoppingMallLink {
     MUSINSA("https://www.musinsa.com/search/musinsa/goods?q="),
-    WCONCEPT("https://www.wconcept.co.kr/Search?query=");
+    WCONCEPT("https://www.wconcept.co.kr/search?keyword=");
     private final String template;
 
     ShoppingMallLink(String template) { // 각 상수가 정의될 때 호출되어 기본 URL을 `template` 필드에 할당.
