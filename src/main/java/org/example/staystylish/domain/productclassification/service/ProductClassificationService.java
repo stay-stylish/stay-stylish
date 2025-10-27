@@ -2,6 +2,7 @@ package org.example.staystylish.domain.productclassification.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
 import org.example.staystylish.domain.productclassification.dto.request.ProductClassificationRequest;
@@ -11,6 +12,8 @@ import org.example.staystylish.domain.productclassification.repository.ProductCl
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import java.util.List;
 
