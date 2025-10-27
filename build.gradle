@@ -43,9 +43,7 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.16.0'
 
-    implementation platform("org.springframework.ai:spring-ai-bom:1.0.0")
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-parameter-store'
     implementation "io.swagger.core.v3:swagger-annotations-jakarta:2.2.30"
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
@@ -61,6 +59,7 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'me.paulschwarz:spring-dotenv:3.0.0'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.16.2'
