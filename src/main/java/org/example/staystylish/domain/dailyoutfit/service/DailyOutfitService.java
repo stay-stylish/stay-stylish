@@ -3,6 +3,7 @@ package org.example.staystylish.domain.dailyoutfit.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.dailyoutfit.code.DailyOutfitErrorCode;
+import org.example.staystylish.domain.dailyoutfit.enums.ShoppingMallLink;
 import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
 import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
 import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
@@ -13,6 +14,7 @@ import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
 import org.example.staystylish.domain.localweather.service.LocalWeatherService;
 import org.example.staystylish.domain.productclassification.entity.Product;
 import org.example.staystylish.domain.productclassification.repository.ProductClassificationRepository;
+import org.example.staystylish.domain.productclassification.service.ProductClassificationService;
 import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.exception.UserException;
@@ -40,9 +42,10 @@ public class DailyOutfitService {
     private final LocalWeatherService weatherService;
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
+    private final ProductClassificationService productClassificationService;
 
     public DailyOutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductClassificationRepository productClassificationRepository,
-                              UserRepository userRepository, LocalWeatherService weatherService, ChatClient chatClient,
+                              UserRepository userRepository, LocalWeatherService weatherService, ChatClient chatClient,  ProductClassificationService productClassificationService,
                               ObjectMapper objectMapper) {
         this.userItemFeedbackRepository = userItemFeedbackRepository;
         this.productClassificationRepository = productClassificationRepository;
@@ -50,6 +53,7 @@ public class DailyOutfitService {
         this.weatherService = weatherService;
         this.chatClient = chatClient;
         this.objectMapper = objectMapper;
+        this.productClassificationService = productClassificationService;
     }
 
     @Transactional(readOnly = true)
@@ -104,6 +108,20 @@ public class DailyOutfitService {
 
             return fallbackResponse;
         }
+    }
+
+    // 변환용 메서드
+    @Transactional(readOnly = true)
+    public DailyOutfitRecommendationResponse getOutfitRecommendationWithLinks(Long userId, Double latitude, Double longitude) {
+
+        //기존 GPS 기반 추천 로직 수행 (AI 추천 응답을 받음)
+        DailyOutfitRecommendationResponse aiRecommendation = getOutfitRecommendation(userId, latitude, longitude);
+        String recommendationText = aiRecommendation.recommendationText();
+        List<String> recommendedCategories = aiRecommendation.recommendedCategories();
+
+        // 응답 데이터를 DTO의 팩토리 메서드에 전달하여 링크 생성 및 DTO 반환.
+        return DailyOutfitRecommendationResponse.from(recommendationText, recommendedCategories);
+
     }
 
     // AI 시스템 프롬프트를 반환합니다.
