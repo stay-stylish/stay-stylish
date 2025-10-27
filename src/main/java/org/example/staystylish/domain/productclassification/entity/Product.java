@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 상품 정보를 나타내는 엔티티 클래스입니다.
+ * 상품 정보를 나타내는 엔티티 클래스
  */
 @Entity
 @Getter
@@ -26,6 +26,7 @@ public class Product {
     }
 
     // 정적 팩토리 메소드
+    // 새로운 Product 엔티티를 생성합니다.
     public static Product create(String name) {
         // 유효성 검증, 초기 상태 설정, 기본값 부여는 정적 팩토리 내부에서 수행
         // 현재는 name만 있으므로 간단하게 처리

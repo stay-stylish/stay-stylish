@@ -1,7 +1,7 @@
 package org.example.staystylish.domain.community.exception;
 
 import lombok.Getter;
-import org.example.staystylish.common.consts.ErrorCode;
+import org.example.staystylish.common.code.ErrorCode;
 
 @Getter
 public class CommunityException extends RuntimeException {

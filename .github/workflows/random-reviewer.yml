@@ -5,48 +5,37 @@ on:
     types: [ opened, reopened, ready_for_review ]
 
 permissions:
-  contents: read
   pull-requests: write
 
 jobs:
   assign:
-    if: ${{ !github.event.pull_request.draft }} # Draft PR은 제외
     runs-on: ubuntu-latest
     steps:
-      - name: Pick random reviewer (1 user)
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const prNum = context.payload.pull_request.number;
-            const author = context.payload.pull_request.user.login;
+      - name: Assign random reviewer
+        run: |
+          # 현재 PR 작성자
+          actor="${{ github.actor }}"
 
-            const reviewers = ["csy10001","jihoLee0818","youngrae0317"];
+          # 리뷰어 후보 (GitHub 아이디 사용)
+          reviewers=("jihoLee0818" "HY-WG" "youngrae0317")
 
-            const deny = new Set([author, "dependabot[bot]", "github-actions[bot]"]);
+          # 작성자는 제외
+          candidates=($(printf "%s\n" "${reviewers[@]}" | grep -v "$actor"))
 
-            // 이미 요청된 리뷰어/팀 제외
-            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNum });
-            const already = new Set([
-              ...(pr.requested_reviewers || []).map(u => u.login),
-              ...(pr.requested_teams || []).map(t => t.slug),
-            ]);
+          # 랜덤으로 1명 선택
+          selected=$(printf "%s\n" "${candidates[@]}" | shuf -n 1)
 
-            // 후보 풀 필터링
-            let candidates = reviewers.filter(u => !deny.has(u) && !already.has(u));
-            if (candidates.length === 0) {
-              core.info("No eligible candidates. Skipping.");
-              return;
-            }
+          # JSON 배열 형태로 변환
+          reviewers_json=$(printf '%s\n' "$selected" | jq -R . | jq -s .)
 
-            // 랜덤 1명
-            const pick = candidates[Math.floor(Math.random() * candidates.length)];
+          # GitHub API 호출 → 리뷰어 지정
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -d "{ \"reviewers\": $reviewers_json }" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/requested_reviewers"
+          echo "Assigned reviewer: $selected"
 
-            // 리뷰어 요청
-            await github.rest.pulls.requestReviewers({
-              owner, repo, pull_number: prNum, reviewers: [pick]
-            });
-
-            core.notice(`🎯 Assigned reviewer: ${pick}`);
+      - name: Allow merge even if selected reviewer doesn't approve
+        run: |
+          echo "Branch protection settings must allow merge from anyone"

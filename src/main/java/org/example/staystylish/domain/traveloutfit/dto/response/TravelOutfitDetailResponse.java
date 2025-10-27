@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 
+/**
+ * 여행 옷차림 추천 상세 응답 DTO.
+ */
 public record TravelOutfitDetailResponse(
         Long travelId,
         Long userId,
@@ -37,6 +40,7 @@ public record TravelOutfitDetailResponse(
         );
     }
 
+    // 상세 응답용 날씨 요약
     public record WeatherSummary(
             Double avgTemperature,
             Integer avgHumidity,

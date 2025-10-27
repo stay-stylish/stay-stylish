@@ -1,15 +1,11 @@
-spring:
-  profiles:
-    active: local
-  datasource:
-    url: jdbc:postgresql://localhost:5432/${DB_NAME}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+# ⬇[application.yml] - 모든 환경 공통 설정
 
+spring:
+  application:
+    name: stay-stylish
+
+  # ⬇JPA 공통 설정 (DB 종류, SQL 포맷팅)
   jpa:
-    hibernate:
-      ddl-auto: create-drop
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -17,12 +13,7 @@ spring:
     show-sql: true
     open-in-view: false
 
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      password: ${REDIS_PASSWORD}
-
+  # ⬇Google OAuth2 설정 (모든 환경 공통)
   security:
     oauth2:
       client:
@@ -36,6 +27,8 @@ spring:
         provider:
           google:
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+
+  # ⬇AI API 설정 (모든 환경 공통)
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
@@ -52,19 +45,35 @@ spring:
             options:
               model: gemini-2.5-pro
 
+# ⬇JWT 설정 (모든 환경 공통)
 jwt:
   secret: ${JWT_SECRET}
   access-expiration: 3600000  # 1시간 (ms)
 
-app:
-  oauth:
-    redirect-uri: ${OAUTH_REDIRECT_URI}
-
-logging:
-  level:
-    org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: trace
-
+# ⬇외부 API 설정 (모든 환경 공통)
 weatherapi:
   base-url: https://api.weatherapi.com/v1
   key: ${WEATHER_API_KEY}
+
+kma:
+  serviceKey: ${KMA_SERVICE_KEY}
+  baseUrl: https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0
+
+server:
+  port: 8080
+
+# ⬇Actuator 상태 체크 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+# ⬇공통 로깅 레벨 (예시에서 가져옴)
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
