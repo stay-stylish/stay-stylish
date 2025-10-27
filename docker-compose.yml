@@ -19,8 +19,14 @@ services:
     container_name: stay-stylish-redis
     restart: always
     ports:
-      - "6379:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+      - "127.0.0.1:6379:6379"
+    command: [
+      "redis-server",
+      "--requirepass", "${REDIS_PASSWORD}",
+      "--appendonly", "yes"
+    ]
+    volumes:
+      - redis-data:/data
     networks:
       - stay-stylish-net
 
@@ -30,3 +36,4 @@ networks:
 
 volumes:
   postgres-data:
+  redis-data:
