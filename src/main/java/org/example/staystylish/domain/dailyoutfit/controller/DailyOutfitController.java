@@ -45,7 +45,7 @@ public class DailyOutfitController {
     ) {
 
         Long userId = principal.getUser().getId();
-        DailyOutfitRecommendationResponse response = outfitService.getOutfitRecommendation(userId, latitude, longitude);
+        DailyOutfitRecommendationResponse response = outfitService.getOutfitRecommendationWithLinks(userId, latitude, longitude);
 
         return ApiResponse.of(DailyOutfitSuccessCode.GET_OUTFIT_RECOMMENDATION_SUCCESS, response);
     }
