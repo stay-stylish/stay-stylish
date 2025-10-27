@@ -1,5 +1,6 @@
 package org.example.staystylish.common.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.security.CustomOAuth2UserService;
 import org.example.staystylish.common.security.JwtAuthenticationEntryPoint;
@@ -48,7 +49,9 @@ public class SecurityConfig {
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
-                        .failureUrl("/api/v1/auth/oauth2/failure")
+                        .failureHandler((request, response, exception) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 로그인 실패");
+                        })
                 );
 
         return http.build();
