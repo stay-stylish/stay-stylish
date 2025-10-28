@@ -62,14 +62,14 @@ public class AuthService {
     @Transactional(readOnly = true)
     public Map<String, String> reissue(String refreshToken) {
         if (!jwtProvider.validateToken(refreshToken)) {
-            throw new UserException(UserErrorCode.INVALID_PASSWORD);
+            throw new UserException(UserErrorCode.INVALID_REFRESH_TOKEN);
         }
 
         String email = jwtProvider.getUsername(refreshToken);
         String savedToken = refreshTokenService.get(email);
 
         if (savedToken == null || !savedToken.equals(refreshToken)) {
-            throw new UserException(UserErrorCode.USER_NOT_FOUND);
+            throw new UserException(UserErrorCode.INVALID_SESSION);
         }
 
         // 새 Access 토큰 발급

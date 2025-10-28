@@ -13,7 +13,8 @@ public enum UserSuccessCode implements SuccessCode {
     PROFILE_FETCH_SUCCESS(HttpStatus.OK, "내 정보 조회 성공"),
     PROFILE_UPDATE_SUCCESS(HttpStatus.OK, "회원정보 수정 성공"),
     USER_DELETE_SUCCESS(HttpStatus.OK, "회원 탈퇴 성공"),
-    LOGOUT_SUCCESS(HttpStatus.OK, "로그아웃 성공");
+    LOGOUT_SUCCESS(HttpStatus.OK, "로그아웃 성공"),
+    TOKEN_REISSUE_SUCCESS(HttpStatus.OK, "토큰 발급 성공");
 
     private final HttpStatus httpStatus;
     private final String message;

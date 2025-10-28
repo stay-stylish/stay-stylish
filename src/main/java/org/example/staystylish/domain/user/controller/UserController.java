@@ -11,6 +11,7 @@ import org.example.staystylish.common.security.UserPrincipal;
 import org.example.staystylish.domain.user.code.UserSuccessCode;
 import org.example.staystylish.domain.user.dto.request.LoginRequest;
 import org.example.staystylish.domain.user.dto.request.ProfileUpdateRequest;
+import org.example.staystylish.domain.user.dto.request.RefreshTokenRequest;
 import org.example.staystylish.domain.user.dto.request.SignupRequest;
 import org.example.staystylish.domain.user.dto.response.UserResponse;
 import org.example.staystylish.domain.user.service.AuthService;
@@ -48,10 +49,9 @@ public class UserController {
     @Operation(summary = "Access Token 재발급", description = "/api/v1/auth/refresh")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     @PostMapping("/auth/refresh")
-    public ApiResponse<Map<String, String>> refresh(@RequestBody Map<String, String> request) {
-        String refreshToken = request.get("refreshToken");
-        Map<String, String> newTokens = authService.reissue(refreshToken);
-        return ApiResponse.of(UserSuccessCode.LOGIN_SUCCESS, newTokens);
+    public ApiResponse<Map<String, String>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        Map<String, String> newTokens = authService.reissue(request.getRefreshToken());
+        return ApiResponse.of(UserSuccessCode.TOKEN_REISSUE_SUCCESS, newTokens);
     }
 
     /** 내 프로필 조회 */
