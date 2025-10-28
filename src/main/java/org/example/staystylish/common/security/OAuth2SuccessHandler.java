@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.staystylish.domain.user.service.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -22,8 +23,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtProvider jwtProvider;
     private final ObjectMapper objectMapper;
+    private final RefreshTokenService refreshTokenService;
 
-    // 환경 설정에서 주입받을 리다이렉트 URL
     @Value("${app.oauth.redirect-uri}")
     private String redirectUri;
 
@@ -36,13 +37,22 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         String email = userPrincipal.getUsername();
 
-        // JWT 토큰 발급
-        String accessToken = jwtProvider.generateToken(email);
+        // Access + Refresh Token 발급
+        String accessToken = jwtProvider.generateAccessToken(email);
+        String refreshToken = jwtProvider.generateRefreshToken(email);
+
+        // Redis에 Refresh Token 저장
+        refreshTokenService.save(email, refreshToken, jwtProvider.getRefreshTokenValidity());
+
         log.info("[OAuth2 Success] JWT 발급 완료 - email: {}", email);
 
-        // 환경별 redirect URI 적용
-        String redirectUrl = redirectUri + "?token=" +
-                URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
+        // 프론트엔드로 전달 (쿼리 파라미터)
+        String redirectUrl = String.format(
+                "%s?accessToken=%s&refreshToken=%s",
+                redirectUri,
+                URLEncoder.encode(accessToken, StandardCharsets.UTF_8),
+                URLEncoder.encode(refreshToken, StandardCharsets.UTF_8)
+        );
 
         log.info("[OAuth2 Success] redirect: {}", redirectUrl);
 
