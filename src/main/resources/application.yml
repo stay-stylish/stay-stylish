@@ -64,9 +64,3 @@ management:
   endpoint:
     health:
       show-details: always
-
-# ⬇공통 로깅 레벨 (예시에서 가져옴)
-logging:
-  level:
-    root: INFO
-    org.springframework.web: DEBUG
