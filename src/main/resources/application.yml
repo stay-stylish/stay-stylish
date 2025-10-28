@@ -69,4 +69,12 @@ management:
 logging:
   level:
     root: INFO
-    org.springframework.web: DEBUG
+    org.springframework.web: INFO
+    org.example.staystylish: DEBUG
+
+  file:
+    path: logs   # logs 폴더 자동 생성됨
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%level] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%level] %logger{36} - %msg%n"
