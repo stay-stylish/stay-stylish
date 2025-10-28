@@ -21,6 +21,9 @@ public class JwtProvider {
     @Value("${jwt.access-expiration}")
     private long accessTokenValidity;
 
+    @Value("${jwt.refresh-expiration}")
+    private long refreshTokenValidity;
+
     private Key key;
 
     @PostConstruct
@@ -28,11 +31,20 @@ public class JwtProvider {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    // JWT 생성
-    public String generateToken(String username) {
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + accessTokenValidity);
+    /** ✅ Access Token 발급 */
+    public String generateAccessToken(String username) {
+        return buildToken(username, accessTokenValidity);
+    }
 
+    /** ✅ Refresh Token 발급 */
+    public String generateRefreshToken(String username) {
+        return buildToken(username, refreshTokenValidity);
+    }
+
+    /** 내부 공통 빌더 */
+    private String buildToken(String username, long validityMillis) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + validityMillis);
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(now)
@@ -41,7 +53,6 @@ public class JwtProvider {
                 .compact();
     }
 
-    // JWT에서 사용자 이메일 추출
     public String getUsername(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -51,7 +62,6 @@ public class JwtProvider {
                 .getSubject();
     }
 
-    // 토큰 유효성 검증 + 상세 로깅
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -59,21 +69,14 @@ public class JwtProvider {
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (ExpiredJwtException e) {
-            log.warn("[JWT] 토큰이 만료되었습니다. - {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.warn("[JWT] 지원되지 않는 JWT 형식입니다. - {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            log.warn("[JWT] 잘못된 JWT 형식입니다. - {}", e.getMessage());
-        } catch (SignatureException e) {
-            log.warn("[JWT] 서명이 유효하지 않습니다. - {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.warn("[JWT] 토큰이 비어있거나 잘못되었습니다. - {}", e.getMessage());
-        } catch (Exception e) {
-            log.error("[JWT] 토큰 검증 중 알 수 없는 오류 발생 - {}", e.getMessage(), e);
+        } catch (JwtException e) {
+            log.warn("[JWT] 유효하지 않은 토큰 - {}", e.getMessage());
+            return false;
         }
+    }
 
-        return false;
+    // ✅ Refresh 토큰 유효시간 반환용 (Redis TTL 설정용)
+    public long getRefreshTokenValidity() {
+        return refreshTokenValidity;
     }
 }
-
