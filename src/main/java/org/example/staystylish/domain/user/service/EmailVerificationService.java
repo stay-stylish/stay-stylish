@@ -57,7 +57,7 @@ public class EmailVerificationService {
     }
 
     /** 인증 메일 재발송 */
-    @Transactional(readOnly = true)
+    @Transactional
     public void resend(String email, String baseUrl) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserException(UserErrorCode.EMAIL_USER_NOT_FOUND));

@@ -41,7 +41,7 @@ public class EmailService {
             log.info("이메일 전송 완료: {}", to);
         } catch (Exception e) {
             log.error("메일 전송 실패", e);
-            throw new RuntimeException("메일 전송 실패");
+            throw new RuntimeException("메일 전송 실패",e);
         }
     }
 }

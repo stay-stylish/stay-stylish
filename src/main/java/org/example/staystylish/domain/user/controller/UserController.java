@@ -40,14 +40,9 @@ public class UserController {
     @PostMapping("/auth/signup")
     @Operation(summary = "회원가입", description = "/api/v1/auth/signup")
     public ApiResponse<UserResponse> signup(@Valid @RequestBody SignupRequest request,
-                                            HttpServletRequest http) {
-        UserResponse response = authService.signup(request);
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
-
-        String baseUrl = getBaseUrl(http);
-        emailVerificationService.issueTokenAndSendMail(user, baseUrl);
-
+                                            HttpServletRequest httpRequest) {
+        String baseUrl = getBaseUrl(httpRequest);
+        UserResponse response = authService.signup(request, baseUrl);
         return ApiResponse.of(UserSuccessCode.SIGNUP_SUCCESS, response);
     }
 
