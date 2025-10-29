@@ -49,6 +49,15 @@ public class User extends BaseEntity {
 
     private LocalDateTime deletedAt;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    public void verifyEmail() {
+        if (this.emailVerified) return;
+        this.emailVerified = true;
+    }
+
     public void updateProfile(String nickname, String stylePreference, Gender gender) {
         this.nickname = nickname;
         this.stylePreference = stylePreference;

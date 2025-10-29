@@ -22,6 +22,10 @@ spring:
     hibernate:
       ddl-auto: update
 
+  mail:
+    username: ${EMAIL_USERNAME}      # 로컬 .env 파일에 Gmail 주소
+    password: ${EMAIL_PASSWORD}
+
   #  Swagger
 springdoc:
   api-docs.enabled: true
