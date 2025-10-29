@@ -21,6 +21,7 @@ WORKDIR /app
 
 # Create non-root user
 RUN groupadd -r spring && useradd -r -g spring spring
+RUN mkdir -p /app/logs && chown -R spring:spring /app/logs
 USER spring:spring
 
 # Copy jar from build stage
