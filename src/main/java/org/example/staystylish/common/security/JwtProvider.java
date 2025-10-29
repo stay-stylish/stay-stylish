@@ -31,12 +31,12 @@ public class JwtProvider {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    /** ✅ Access Token 발급 */
+    /** Access Token 발급 */
     public String generateAccessToken(String username) {
         return buildToken(username, accessTokenValidity);
     }
 
-    /** ✅ Refresh Token 발급 */
+    /** Refresh Token 발급 */
     public String generateRefreshToken(String username) {
         return buildToken(username, refreshTokenValidity);
     }
@@ -75,7 +75,7 @@ public class JwtProvider {
         }
     }
 
-    // ✅ Refresh 토큰 유효시간 반환용 (Redis TTL 설정용)
+    // Refresh 토큰 유효시간 반환용 (Redis TTL 설정용)
     public long getRefreshTokenValidity() {
         return refreshTokenValidity;
     }

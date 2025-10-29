@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.example.staystylish.common.code.CommonErrorCode;
 import org.example.staystylish.common.dto.response.ApiResponse;
-import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -24,7 +24,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                          AuthenticationException authException) throws IOException {
 
         ApiResponse<Void> apiResponse = ApiResponse.of(
-                UserErrorCode.INVALID_PASSWORD, // 예시
+                CommonErrorCode.UNAUTHORIZED_ACCESS, // 예시
                 null
         );
 

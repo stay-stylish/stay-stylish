@@ -46,10 +46,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         log.info("[OAuth2 Success] JWT 발급 완료 - email: {}", email);
 
+        String baseRedirect = userPrincipal.isNewUser()
+                ? redirectUri + "/signup/additional"
+                : redirectUri + "/home";
+
         // 프론트엔드로 전달 (쿼리 파라미터)
         String redirectUrl = String.format(
                 "%s?accessToken=%s&refreshToken=%s",
-                redirectUri,
+                baseRedirect,
                 URLEncoder.encode(accessToken, StandardCharsets.UTF_8),
                 URLEncoder.encode(refreshToken, StandardCharsets.UTF_8)
         );

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.example.staystylish.domain.user.entity.Gender;
+import org.example.staystylish.domain.user.entity.Provider;
 import org.example.staystylish.domain.user.entity.User;
 
 public record SignupRequest(
@@ -19,12 +20,17 @@ public record SignupRequest(
 ) {
 
     public User toEntity(String encodedPassword) {
+        Provider resolvedProvider = (provider == null || provider.isBlank())
+                ? Provider.LOCAL
+                : Provider.valueOf(provider.toUpperCase());
+
         return User.builder()
                 .email(email)
                 .password(encodedPassword)
                 .nickname(nickname)
                 .stylePreference(stylePreference)
                 .gender(Gender.valueOf(gender.toUpperCase()))
+                .provider(resolvedProvider)
                 .providerId(providerId)
                 .build();
     }
