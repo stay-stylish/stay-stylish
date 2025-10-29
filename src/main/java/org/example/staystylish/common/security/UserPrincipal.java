@@ -16,6 +16,16 @@ public class UserPrincipal implements UserDetails, OAuth2User {
 
     private final User user;
     private Map<String, Object> attributes;
+    private boolean isNewUser;
+
+    public void setNewUser(boolean isNewUser) {
+        this.isNewUser = isNewUser;
+    }
+
+    // 신규 유저 여부 반환 메서드 추가
+    public boolean isNewUser() {
+        return isNewUser;
+    }
 
     // Local 로그인용 (JWT)
     public UserPrincipal(User user) {
