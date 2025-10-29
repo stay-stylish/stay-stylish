@@ -42,6 +42,10 @@ public class AuthService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         if (user.isDeleted()) throw new UserException(UserErrorCode.USER_DELETED);
+
+        if (!user.isEmailVerified())
+            throw new UserException(UserErrorCode.EMAIL_NOT_VERIFIED);
+
         if (!passwordEncoder.matches(request.password(), user.getPassword()))
             throw new UserException(UserErrorCode.INVALID_PASSWORD);
 
