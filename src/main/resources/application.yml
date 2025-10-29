@@ -37,6 +37,13 @@ spring:
           model: gpt-4o-mini
           temperature: 0.2
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
 # ⬇JWT 설정 (모든 환경 공통)
 jwt:
   secret: ${JWT_SECRET}
@@ -64,3 +71,7 @@ management:
   endpoint:
     health:
       show-details: always
+
+app:
+  mail:
+    from: no-reply@staystylish.com
