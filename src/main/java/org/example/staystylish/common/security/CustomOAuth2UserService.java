@@ -56,9 +56,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         log.info("OAuth2 로그인 성공 - 사용자: {} (신규 여부: {})", user.getEmail(), isNewUser);
 
         // UserPrincipal에 신규 유저 여부 추가
-        UserPrincipal principal = new UserPrincipal(user, oAuth2User.getAttributes());
-        principal.setNewUser(isNewUser);
-
-        return principal;
+        return new UserPrincipal(user, oAuth2User.getAttributes(), isNewUser);
     }
 }

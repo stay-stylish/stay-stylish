@@ -30,6 +30,7 @@ public record SignupRequest(
                 .nickname(nickname)
                 .stylePreference(stylePreference)
                 .gender(Gender.valueOf(gender.toUpperCase()))
+                .provider(resolvedProvider)
                 .providerId(providerId)
                 .build();
     }

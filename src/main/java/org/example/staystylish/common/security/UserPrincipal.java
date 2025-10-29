@@ -15,36 +15,33 @@ import java.util.Map;
 public class UserPrincipal implements UserDetails, OAuth2User {
 
     private final User user;
-    private Map<String, Object> attributes;
-    private boolean isNewUser;
+    private final Map<String, Object> attributes;
+    private final boolean isNewUser;
 
-    public void setNewUser(boolean isNewUser) {
+    /** Local 로그인용 (JWT 기반) */
+    public UserPrincipal(User user) {
+        this(user, null, false);
+    }
+
+    /** OAuth2 로그인용 (기존 사용자) */
+    public UserPrincipal(User user, Map<String, Object> attributes) {
+        this(user, attributes, false);
+    }
+
+    /** OAuth2 로그인용 (신규 여부 포함) */
+    public UserPrincipal(User user, Map<String, Object> attributes, boolean isNewUser) {
+        this.user = user;
+        this.attributes = attributes;
         this.isNewUser = isNewUser;
     }
 
-    // 신규 유저 여부 반환 메서드 추가
-    public boolean isNewUser() {
-        return isNewUser;
-    }
-
-    // Local 로그인용 (JWT)
-    public UserPrincipal(User user) {
-        this.user = user;
-    }
-
-    // OAuth2 로그인용 (Google)
-    public UserPrincipal(User user, Map<String, Object> attributes) {
-        this.user = user;
-        this.attributes = attributes;
-    }
-
-    // 권한 반환
+    /** 권한 반환 */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
-    // Local 로그인용
+    /** UserDetails 구현 */
     @Override
     public String getPassword() {
         return user.getPassword();
@@ -55,7 +52,7 @@ public class UserPrincipal implements UserDetails, OAuth2User {
         return user.getEmail();
     }
 
-    // OAuth2User용
+    /** OAuth2User 구현 */
     @Override
     public Map<String, Object> getAttributes() {
         return attributes;
@@ -66,7 +63,7 @@ public class UserPrincipal implements UserDetails, OAuth2User {
         return user.getNickname();
     }
 
-    // 계정 상태 관련
+    /** 계정 상태 */
     @Override
     public boolean isAccountNonExpired() { return true; }
 
