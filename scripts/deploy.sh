@@ -56,7 +56,7 @@ EOF
 CMDS=(
   "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${REG_URI}"
 
-  "jq -n --arg cfg \"${PROMPTAIL_CONFIG_CONTENT}\" '(\$cfg)' > /home/ssm-user/promtail-config.yml"
+"jq -n -r --arg cfg \"${PROMPTAIL_CONFIG_CONTENT}\" '(\$cfg)' > /home/ssm-user/promtail-config.yml"
 
   "docker pull ${FULL_URI}"
   "docker stop ${CONTAINER_NAME} || true"
