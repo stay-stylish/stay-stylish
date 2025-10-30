@@ -32,7 +32,8 @@ CMDS=(
   "docker pull ${FULL_URI}"
   "docker stop ${CONTAINER_NAME} || true"
   "docker rm   ${CONTAINER_NAME} || true"
-  "docker run -d --name ${CONTAINER_NAME} --restart=always -p ${APP_PORT}:${APP_PORT} -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILE} ${FULL_URI}"
+  "mkdir -p /home/ssm-user/app-logs" # ssm-user 홈에 로그 디렉터리 생성
+  "docker run -d --name ${CONTAINER_NAME} --restart=always -p ${APP_PORT}:${APP_PORT} -v /home/ssm-user/app-logs:/app/logs -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILE} ${FULL_URI}"
 )
 
 # Bash 배열 → JSON 배열 변환 (jq 필수)
