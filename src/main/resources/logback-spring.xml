@@ -2,7 +2,7 @@
 <configuration scan="true">
 
     <!-- 공통 설정 property -->
-    <property name="LOG_PATH" value="logs"/>
+    <property name="LOG_PATH" value="app-logs"/>
     <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} [%highlight(%-5level)] %logger{36} - %msg%n"/>
 
     <!-- 콘솔 출력 -->
