@@ -40,7 +40,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
-                        .requestMatchers("/api/v1/auth/**", "/oauth2/**", "/api/v1/weather/*", "/favicon.ico", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/oauth2/**", "/api/v1/weather/*", "/favicon.ico",
+                                "/css/**", "/js/**", "/images/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
