@@ -1,7 +1,7 @@
 package org.example.staystylish.domain.traveloutfit.service;
 
 import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
-import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.example.staystylish.domain.user.entity.Gender;
@@ -22,6 +22,6 @@ public interface TravelOutfitService {
     Page<TravelOutfitSummaryResponse> getMyRecommendationsSummary(Long userId, Pageable pageable);
 
     // 추천 상세 조회
-    TravelOutfitDetailResponse getRecommendationDetail(Long userId, Long travelId);
+    TravelOutfitResponse getRecommendationDetail(Long userId, Long travelId);
 
 }

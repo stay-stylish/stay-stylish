@@ -20,8 +20,7 @@ import org.example.staystylish.domain.traveloutfit.ai.TravelAiPromptBuilder;
 import org.example.staystylish.domain.traveloutfit.code.TravelOutfitErrorCode;
 import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
 import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJsonResponse;
-import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
-import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.RainAdvisory;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
@@ -148,13 +147,19 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
             }
 
             // AI 응답 및 문화 정보 등을 DB에 저장하기 위해서 JsonNode 형태로 변환
-            var aiOutfit = new AiOutfit(aiTravelJsonResponse.summary(), aiTravelJsonResponse.outfits());
+            var aiOutfit = new TravelOutfitResponse.AiOutfit(aiTravelJsonResponse.summary(),
+                    aiTravelJsonResponse.outfits());
             var culturalConstraints = aiTravelJsonResponse.culturalConstraints();
             var aiNode = objectMapper.valueToTree(aiOutfit);
             var cultureNode = objectMapper.valueToTree(culturalConstraints);
 
+            var safetyNotes = aiTravelJsonResponse.safetyNotes();
+            var safetyNotesNode = objectMapper.valueToTree(safetyNotes);
+
             // 엔티티 상태를 성공으로 변경
-            outfit.complete(avgTemp, avgHumidity, avgRainProb, condition, cultureNode, aiNode);
+            outfit.complete(avgTemp, avgHumidity, avgRainProb, condition,
+                    cultureNode, aiNode,
+                    safetyNotesNode, umbrellaSummary);
             travelOutfitRepository.save(outfit);
             log.info("추천 생성 완료: travelId={}", travelId);
 
@@ -183,12 +188,12 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
 
     // 추천 상세 조회
     @Transactional(readOnly = true)
-    public TravelOutfitDetailResponse getRecommendationDetail(Long userId, Long travelId) {
+    public TravelOutfitResponse getRecommendationDetail(Long userId, Long travelId) {
 
         TravelOutfit outfit = travelOutfitRepository.findByIdAndUserId(travelId, userId)
                 .orElseThrow(() -> new GlobalException(TravelOutfitErrorCode.RECOMMENDATION_NOT_FOUND));
 
-        return TravelOutfitDetailResponse.from(outfit);
+        return TravelOutfitResponse.from(outfit, objectMapper);
     }
 
     // 성별을 한국어 문자열로 변환

@@ -73,6 +73,13 @@ public class TravelOutfit extends BaseEntity {
     @Column(length = 500)
     private String errorMessage;
 
+    @Column(length = 1000)
+    private String umbrellaSummary;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private JsonNode safetyNotesJson;
+
     // PENDING 상태의 엔티티를 생성하는 정적 팩토리 메서드
     public static TravelOutfit createPending(Long userId, String country, String city,
                                              LocalDate startDate, LocalDate endDate) {
@@ -89,7 +96,8 @@ public class TravelOutfit extends BaseEntity {
 
     // 비동기 작업 성공 시 엔티티를 업데이트하는 메서드
     public void complete(Double avgTemp, Integer avgHumidity, Integer rainProb, String condition,
-                         JsonNode culturalConstraints, JsonNode aiOutfit) {
+                         JsonNode culturalConstraints, JsonNode aiOutfit,
+                         JsonNode safetyNotes, String umbrellaSummary) { // 2개 파라미터 추가
 
         this.avgTemperature = avgTemp;
         this.avgHumidity = avgHumidity;
@@ -97,6 +105,8 @@ public class TravelOutfit extends BaseEntity {
         this.condition = condition;
         this.culturalConstraintsJson = culturalConstraints;
         this.aiOutfitJson = aiOutfit;
+        this.safetyNotesJson = safetyNotes; // [추가]
+        this.umbrellaSummary = umbrellaSummary; // [추가]
         this.status = RecommendationStatus.COMPLETED;
         this.errorMessage = null;
     }

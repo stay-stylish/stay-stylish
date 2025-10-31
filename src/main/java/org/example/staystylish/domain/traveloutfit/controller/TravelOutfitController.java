@@ -11,7 +11,7 @@ import org.example.staystylish.common.dto.response.PageResponse;
 import org.example.staystylish.common.security.UserPrincipal;
 import org.example.staystylish.domain.traveloutfit.code.TravelOutfitSuccessCode;
 import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
-import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.example.staystylish.domain.traveloutfit.service.TravelOutfitService;
@@ -95,13 +95,13 @@ public class TravelOutfitController {
             security = {@SecurityRequirement(name = "bearerAuth")})
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     @GetMapping("/recommendations/{travelId}")
-    public ApiResponse<TravelOutfitDetailResponse> getRecommendationDetail(
+    public ApiResponse<TravelOutfitResponse> getRecommendationDetail(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long travelId) {
 
         Long userId = principal.getUser().getId();
 
-        TravelOutfitDetailResponse response = travelOutfitServiceImpl.getRecommendationDetail(userId, travelId);
+        TravelOutfitResponse response = travelOutfitServiceImpl.getRecommendationDetail(userId, travelId);
 
         return ApiResponse.of(TravelOutfitSuccessCode.GET_RECOMMENDATION_DETAIL_SUCCESS, response);
     }
