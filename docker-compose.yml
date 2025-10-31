@@ -1,4 +1,23 @@
+networks:
+  stay-stylish-net: # 앱 개발용 네트워크
+    driver: bridge
+  monitoring-net: # 모니터링 스택용 네트워크
+    driver: bridge
+
+volumes:
+  # 앱 개발용 볼륨
+  postgres-data:
+  redis-data:
+  # 모니터링 스택용 볼륨
+  grafana-data:
+  loki-data:
+  prometheus-data:
+  influxdb-data:
+  # Promtail positions 파일 저장용 (선택적이지만 권장)
+  promtail-positions:
+
 services:
+  # --- 앱 개발 환경 (PostgreSQL, Redis) ---
   postgres-db:
     image: postgres:15
     container_name: stay-stylish-db
@@ -30,10 +49,114 @@ services:
     networks:
       - stay-stylish-net
 
-networks:
-  stay-stylish-net:
-    driver: bridge
+  # --- 모니터링 스택 ---
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - monitoring-net
 
-volumes:
-  postgres-data:
-  redis-data:
+  loki:
+    image: grafana/loki:3.1.0 # Promtail 버전에 맞춰 Loki 버전도 비슷하게 유지 (3.1.0 권장)
+    container_name: loki
+    restart: always
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring-net
+
+  # --- Promtail (로그 수집기) 추가 ---
+  promtail:
+    # image: grafana/promtail:2.9.8 # 사용자가 지정한 버전
+    image: grafana/promtail:3.1.0 # Loki 버전에 맞추는 것을 권장
+    container_name: promtail
+    restart: always
+    volumes:
+      # 로컬의 app-logs 폴더를 컨테이너 /var/log/app 경로로 읽기 전용 마운트
+      # !! 중요: 로컬 Spring Boot 앱 로그가 my-monitoring/app-logs 폴더에 생성되어야 함 !!
+      - ./app-logs:/var/log/app:ro
+      # 로컬의 promtail-config.yml 파일을 컨테이너 내부 경로로 읽기 전용 마운트
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+      # Promtail이 어디까지 로그를 읽었는지 위치를 저장하는 파일 (컨테이너 재시작 시 중복 방지)
+      - promtail-positions:/tmp
+    command: [ "-config.file=/etc/promtail/config.yml" ]
+    depends_on: # Loki가 먼저 실행된 후 Promtail 실행
+      - loki
+    networks:
+      - monitoring-net # 모니터링 네트워크 사용
+
+  # --- Grafana (수정된 부분) ---
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki # Grafana는 Loki에도 의존
+    networks:
+      - monitoring-net
+
+  influxdb:
+    image: influxdb:1.8
+    container_name: influxdb
+    restart: always
+    environment:
+      - INFLUXDB_DB=k6
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+    networks:
+      - monitoring-net
+
+  # --- 부하 테스트 도구 ---
+  k6:
+    image: grafana/k6:latest
+    container_name: k6
+    profiles: [ "on-demand" ]
+    depends_on:
+      - influxdb
+    working_dir: /scripts
+    volumes:
+      - ./load:/scripts:ro
+    entrypoint:
+      - "k6"
+      - "run"
+      - "--out"
+      - "influxdb=http://influxdb:8086/k6"
+      - "/scripts/k6-script.js"
+    networks:
+      - monitoring-net
+
+  locust:
+    image: locustio/locust:latest
+    container_name: locust
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./load/locustfile.py:/locustfile.py:ro
+    command:
+      - "-f"
+      - "/locustfile.py"
+      - "--host"
+      - "http://host.docker.internal:8080"
+    profiles: [ "on-demand" ]
+    networks:
+      - monitoring-net
+
