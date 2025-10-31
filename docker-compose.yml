@@ -140,7 +140,7 @@ services:
       - "run"
       - "--out"
       - "influxdb=http://influxdb:8086/k6"
-      - "/scripts/k6-script.js"
+      - "/scripts/k6-scripts.js"
     networks:
       - monitoring-net
 
