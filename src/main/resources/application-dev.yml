@@ -31,7 +31,6 @@ spring:
     username: ${EMAIL_USERNAME}
     password: ${EMAIL_PASSWORD}
 
-
   #  Swagger 활성화
 springdoc:
   api-docs.enabled: true
