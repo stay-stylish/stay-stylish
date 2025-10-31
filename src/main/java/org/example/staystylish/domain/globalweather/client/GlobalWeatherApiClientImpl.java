@@ -22,7 +22,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class GlobalWeatherApiClientImpl implements GlobalWeatherApiClient {
 
-    private static final Duration TIMEOUT = Duration.ofSeconds(3); // timeout 추가
+    private static final Duration TIMEOUT = Duration.ofSeconds(10); // timeout 추가
     private final GlobalWeatherApiProperties props;
     private final WebClient weatherApiWebClient;
 
