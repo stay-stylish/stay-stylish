@@ -31,13 +31,10 @@ public class EmailService {
         MDC.put("email", to);
         try {
             String verifyLink = baseUrl + "/api/v1/auth/verify?token=" + token;
-
-            // HTML 템플릿 처리
             Context context = new Context();
             context.setVariable("verifyLink", verifyLink);
             String html = templateEngine.process("mail/verify", context);
 
-            // 메일 구성
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(to);
@@ -49,7 +46,7 @@ public class EmailService {
             log.info("인증 메일 발송 완료 (to={})", to);
 
         } catch (Exception e) {
-            log.error("이메일 전송 실패 (to={})", to, e);
+            log.error("이메일 발송 실패 (to={})", to, e);
         } finally {
             MDC.clear();
         }

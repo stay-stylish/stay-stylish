@@ -12,6 +12,6 @@ public class AsyncExceptionConfig implements AsyncConfigurer {
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return (ex, method, params) ->
-                log.error("비동기 메일 전송 중 예외 발생 - method={}, params={}", method.getName(), params, ex);
+                log.error("비동기 메일 전송 중 예외 발생 - method={}, params={}", method.getName(), java.util.Arrays.toString(params), ex);
     }
 }
