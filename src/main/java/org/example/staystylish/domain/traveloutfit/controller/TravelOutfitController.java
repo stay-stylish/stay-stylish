@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.dto.response.ApiResponse;
 import org.example.staystylish.common.dto.response.PageResponse;
@@ -11,8 +12,8 @@ import org.example.staystylish.common.security.UserPrincipal;
 import org.example.staystylish.domain.traveloutfit.code.TravelOutfitSuccessCode;
 import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitDetailResponse;
-import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
+import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.example.staystylish.domain.traveloutfit.service.TravelOutfitService;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.springframework.data.domain.Page;
@@ -44,8 +45,8 @@ public class TravelOutfitController {
             security = {@SecurityRequirement(name = "bearerAuth")})
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     @PostMapping("/recommendations")
-    public ApiResponse<TravelOutfitResponse> createRecommendation(@AuthenticationPrincipal UserPrincipal principal,
-                                                                  @Valid @RequestBody TravelOutfitRequest request) {
+    public ApiResponse<Map<String, Long>> createRecommendation(@AuthenticationPrincipal UserPrincipal principal,
+                                                               @Valid @RequestBody TravelOutfitRequest request) {
         // 로그인한 사용자 ID랑 성별 추출
         Long userId = principal.getUser().getId();
         Gender gender = principal.getUser().getGender();
@@ -56,9 +57,17 @@ public class TravelOutfitController {
             gender = Gender.MALE;
         }
 
-        TravelOutfitResponse response = travelOutfitServiceImpl.createRecommendation(userId, request, gender);
+        // PENDING 상태의 엔티티 생성 및 travelId 확보 - 동기
+        TravelOutfit pendingOutfit = travelOutfitServiceImpl.requestRecommendation(userId, request);
 
-        return ApiResponse.of(TravelOutfitSuccessCode.CREATED, response);
+        // 실제 작업 수행 (이 메서드는 즉시 리턴됨) - 비동기
+        travelOutfitServiceImpl.processRecommendation(pendingOutfit.getId(), request, gender);
+
+        // 3. travelId를 클라이언트에 즉시 반환
+        return ApiResponse.of(
+                TravelOutfitSuccessCode.REQUEST_ACCEPTED, // (4단계에서 추가할 SuccessCode)
+                Map.of("travelId", pendingOutfit.getId())
+        );
     }
 
     // 내 추천 목록(요약) 페이징 조회

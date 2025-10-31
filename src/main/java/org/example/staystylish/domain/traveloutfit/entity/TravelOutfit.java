@@ -3,12 +3,16 @@ package org.example.staystylish.domain.traveloutfit.entity;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.staystylish.common.entity.BaseEntity;
@@ -21,7 +25,9 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Table(name = "travel_outfit_recommendation")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TravelOutfit extends BaseEntity {
 
     @Id
@@ -59,31 +65,47 @@ public class TravelOutfit extends BaseEntity {
     @Column(columnDefinition = "jsonb")
     private JsonNode aiOutfitJson;
 
-    private TravelOutfit(Long userId, String country, String city,
-                         LocalDate startDate, LocalDate endDate,
-                         Double avgTemperature, Integer avgHumidity,
-                         Integer rainProbability, String condition,
-                         JsonNode culturalConstraintsJson, JsonNode aiOutfitJson) {
-        this.userId = userId;
-        this.country = country;
-        this.city = city;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.avgTemperature = avgTemperature;
-        this.avgHumidity = avgHumidity;
-        this.rainProbability = rainProbability;
-        this.condition = condition;
-        this.culturalConstraintsJson = culturalConstraintsJson;
-        this.aiOutfitJson = aiOutfitJson;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    @Builder.Default
+    private RecommendationStatus status = RecommendationStatus.PENDING;
+
+    @Column(length = 500)
+    private String errorMessage;
+
+    // PENDING 상태의 엔티티를 생성하는 정적 팩토리 메서드
+    public static TravelOutfit createPending(Long userId, String country, String city,
+                                             LocalDate startDate, LocalDate endDate) {
+
+        return TravelOutfit.builder()
+                .userId(userId)
+                .country(country)
+                .city(city)
+                .startDate(startDate)
+                .endDate(endDate)
+                .status(RecommendationStatus.PENDING)
+                .build();
     }
 
-    public static TravelOutfit create(Long userId, String country, String city,
-                                      LocalDate startDate, LocalDate endDate,
-                                      Double avgTemperature, Integer avgHumidity,
-                                      Integer rainProbability, String condition,
-                                      JsonNode culturalConstraintsJson, JsonNode aiOutfitJson) {
-        return new TravelOutfit(userId, country, city, startDate, endDate,
-                avgTemperature, avgHumidity, rainProbability, condition,
-                culturalConstraintsJson, aiOutfitJson);
+    // 비동기 작업 성공 시 엔티티를 업데이트하는 메서드
+    public void complete(Double avgTemp, Integer avgHumidity, Integer rainProb, String condition,
+                         JsonNode culturalConstraints, JsonNode aiOutfit) {
+
+        this.avgTemperature = avgTemp;
+        this.avgHumidity = avgHumidity;
+        this.rainProbability = rainProb;
+        this.condition = condition;
+        this.culturalConstraintsJson = culturalConstraints;
+        this.aiOutfitJson = aiOutfit;
+        this.status = RecommendationStatus.COMPLETED;
+        this.errorMessage = null;
+    }
+
+    // 비동기 작업 실패 시 엔티티를 업데이트하는 메서드
+    public void fail(String message) {
+
+        this.status = RecommendationStatus.FAILED;
+        // 오류 메시지가 너무 길 경우를 대비해 500자로 제한
+        this.errorMessage = (message != null && message.length() > 500) ? message.substring(0, 500) : message;
     }
 }
