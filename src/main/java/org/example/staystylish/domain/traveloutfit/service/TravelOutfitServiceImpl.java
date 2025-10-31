@@ -49,6 +49,7 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
     private final TravelAiClient aiClient;
     private final TravelAiPromptBuilder promptBuilder;
     private final ObjectMapper objectMapper;
+    private final TravelOutfitStatusUpdater statusUpdater;
 
     // (동기) 추천 요청 접수
     public TravelOutfit requestRecommendation(Long userId, TravelOutfitRequest request) {
@@ -168,11 +169,8 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
             // 실패 시 엔티티 상태를 FAILED로 업데이트
             log.error("추천 생성 실패: travelId={}. 오류: {}", travelId, e.getMessage());
 
-            // catch 블록에서도 ID로 다시 조회하여 트랜잭션 컨텍스트 내에서 엔티티를 관리
-            travelOutfitRepository.findById(travelId).ifPresent(outfitToFail -> {
-                outfitToFail.fail(e.getMessage());
-                travelOutfitRepository.save(outfitToFail);
-            });
+            // 별도 트랜잭션을 가진 statusUpdater를 호출하여 상태를 FAILED로 변경
+            statusUpdater.updateStatusToFailed(travelId, e.getMessage());
         }
     }
 
