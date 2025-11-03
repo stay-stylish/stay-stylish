@@ -18,7 +18,8 @@ public enum UserErrorCode implements ErrorCode {
     EMAIL_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않거나 만료된 이메일 인증 토큰입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
     EMAIL_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "이메일 인증 대상 사용자를 찾을 수 없습니다."),
-    EMAIL_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "이미 이메일 인증이 완료된 사용자입니다.");
+    EMAIL_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "이미 이메일 인증이 완료된 사용자입니다."),
+    SIGNUP_IN_PROGRESS(HttpStatus.CONFLICT, "회원가입 처리 중입니다. 잠시 후 다시 시도해주세요.");
 
     private final HttpStatus httpStatus;
     private final String message;
