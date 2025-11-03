@@ -15,7 +15,7 @@ public interface TravelOutfitService {
     TravelOutfit requestRecommendation(Long userId, TravelOutfitRequest request);
 
     // (비동기) 실제 API 호출 및 엔티티 업데이트 로직
-    @Async
+    @Async("travelRecommendationExecutor")
     void processRecommendation(Long travelId, TravelOutfitRequest request, Gender gender);
 
     // 내 추천 목록(요약) 페이징 조회
