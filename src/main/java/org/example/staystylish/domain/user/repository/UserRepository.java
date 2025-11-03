@@ -14,9 +14,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
 
-    @EntityGraph(attributePaths = {"reviews", "profile"})
     @Query("SELECT u FROM User u WHERE u.deletedAt IS NULL")
-    List<User> findAllWithDetails();
+    List<User> findAllActiveUsers();
+
+    @EntityGraph(attributePaths = {"posts", "likes", "shares"})
+    @Query("SELECT u FROM User u WHERE u.id = :userId AND u.deletedAt IS NULL")
+    Optional<User> findByIdWithDetails(@Param("userId") Long userId);
 
     @Query("""
     SELECT new org.example.staystylish.domain.user.dto.response.UserResponse(
