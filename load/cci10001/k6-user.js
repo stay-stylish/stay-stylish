@@ -17,7 +17,7 @@ export default function () {
 
     check(loginRes, { 'login success': (r) => r.status === 200 });
 
-    const parsed = JSON.parse(loginRes.body);
+    const parsed = loginRes.json();
     const accessToken = parsed.data?.accessToken;
     const refreshToken = parsed.data?.refreshToken;
 
@@ -42,7 +42,7 @@ export default function () {
 
     // access 토큰 재발급 (body에 refreshToken 포함)
     const refreshRes = http.post(`${BASE_URL}/api/v1/auth/refresh`, JSON.stringify({
-        refreshToken: refreshToken
+        refreshToken
     }), { headers });
     check(refreshRes, { 'token refresh success': (r) => r.status === 200 });
 

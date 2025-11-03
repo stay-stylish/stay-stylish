@@ -17,7 +17,7 @@ export default function () {
 
     check(loginRes, { 'login success': (r) => r.status === 200 });
 
-    const parsed = JSON.parse(loginRes.body);
+    const parsed = loginRes.json();
     const accessToken = parsed.data?.accessToken;
     const refreshToken = parsed.data?.refreshToken;
 
@@ -39,7 +39,7 @@ export default function () {
 
     check(postRes, { 'create post success': (r) => r.status === 200 || r.status === 201 });
 
-    const postId = JSON.parse(postRes.body)?.data?.id;
+    const postId = postRes.json()?.data?.id;
     if (!postId) {
         console.warn('게시글 생성 후 ID를 받지 못했습니다. 이후 단계 생략');
         return;
