@@ -12,10 +12,12 @@ import org.example.staystylish.domain.user.entity.Provider;
 import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Slf4j
@@ -28,31 +30,52 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final RefreshTokenService refreshTokenService;
     private final EmailVerificationService emailVerificationService;
+    private final StringRedisTemplate redisTemplate;
+
+    private static final String LOCK_PREFIX = "lock:signup:";
+    private static final Duration LOCK_TIMEOUT = Duration.ofSeconds(5);
 
     // 회원가입
     @Transactional
     public UserResponse signup(SignupRequest request, String baseUrl) {
-        if (userRepository.existsByEmail(request.email())) {
+        String email = request.email();
+        String lockKey = LOCK_PREFIX + email;
+
+        // ① 락 획득 시도
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "LOCKED", LOCK_TIMEOUT);
+        if (Boolean.FALSE.equals(acquired)) {
             throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
         }
 
-        User user = User.builder()
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .nickname(request.nickname())
-                .stylePreference(request.stylePreference())
-                .gender(request.gender() != null ? Gender.valueOf(request.gender().toUpperCase()) : null)
-                .provider(Provider.LOCAL)
-                .emailVerified(false)
-                .build();
+        try {
+            // ② 이메일 중복 체크
+            if (userRepository.existsByEmail(email)) {
+                throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
+            }
 
-        userRepository.save(user);
+            // ③ 사용자 생성
+            User user = User.builder()
+                    .email(email)
+                    .password(passwordEncoder.encode(request.password()))
+                    .nickname(request.nickname())
+                    .stylePreference(request.stylePreference())
+                    .gender(request.gender() != null ? Gender.valueOf(request.gender().toUpperCase()) : null)
+                    .provider(Provider.LOCAL)
+                    .emailVerified(false)
+                    .build();
 
-        // 회원가입 성공 후 이메일 인증 발송까지 포함
-        emailVerificationService.issueTokenAndSendMail(user, baseUrl);
-        log.info("회원가입 완료 및 인증 메일 발송: {}", user.getEmail());
+            userRepository.save(user);
 
-        return UserResponse.from(user);
+            // ④ 인증 메일 발송
+            emailVerificationService.issueTokenAndSendMail(user, baseUrl);
+            log.info("회원가입 완료 및 인증 메일 발송: {}", user.getEmail());
+
+            return UserResponse.from(user);
+
+        } finally {
+            // ⑤ 락 해제
+            redisTemplate.delete(lockKey);
+        }
     }
 
     // 로그인
