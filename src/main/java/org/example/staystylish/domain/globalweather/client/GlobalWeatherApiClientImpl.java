@@ -2,6 +2,7 @@ package org.example.staystylish.domain.globalweather.client;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ public class GlobalWeatherApiClientImpl implements GlobalWeatherApiClient {
     private final WebClient weatherApiWebClient;
 
     @Override
+    @CircuitBreaker(name = "globalWeatherApi", fallbackMethod = "fallbackGetDailyForecast")
     public List<Daily> getDailyForecast(String city, LocalDate start, LocalDate end) {
 
         LocalDate today = LocalDate.now();
@@ -82,6 +84,15 @@ public class GlobalWeatherApiClientImpl implements GlobalWeatherApiClient {
             }
         }
         return list;
+    }
+
+    public List<Daily> fallbackGetDailyForecast(String city, LocalDate start, LocalDate end, Throwable t) {
+
+        log.warn("[CircuitBreaker] 날씨 API 호출 차단. city={}, start={}, end={}, cause={}", city, start, end,
+                t.getMessage());
+        // 이 예외는 processRecommendation의 catch 블록에서 처리됩니다.
+        throw new GlobalException(GlobalWeatherErrorCode.EXTERNAL_UNAVAILABLE);
+
     }
 }
 
