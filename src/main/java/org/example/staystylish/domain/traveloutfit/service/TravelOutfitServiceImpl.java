@@ -72,7 +72,7 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
     }
 
     // (비동기) 실제 추천 생성 로직 - 별도 스레드, 트랜잭션으로 실행
-    @Async
+    @Async("travelRecommendationExecutor")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
     public void processRecommendation(Long travelId, TravelOutfitRequest request, Gender gender) {
