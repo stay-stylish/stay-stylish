@@ -2,6 +2,7 @@ package org.example.staystylish.domain.dailyoutfit.dto.request;
 
 import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
 
+public record FeedbackRequest(String categoryName, LikeStatus status) {
 /**
  * 카테고리 피드백 요청을 위한 DTO 레코드
  *

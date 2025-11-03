@@ -17,7 +17,6 @@ import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -42,7 +41,7 @@ public class DailyOutfitService {
     private final ProductClassificationService productClassificationService;
 
     public DailyOutfitService(UserCategoryFeedbackRepository userCategoryFeedbackRepository,
-                              UserRepository userRepository, LocalWeatherService weatherService, @Qualifier("chatClientOpenAi") ChatClient chatClient, ProductClassificationService productClassificationService,
+                              UserRepository userRepository, LocalWeatherService weatherService, ChatClient chatClient, ProductClassificationService productClassificationService,
                               ObjectMapper objectMapper) {
         this.userCategoryFeedbackRepository = userCategoryFeedbackRepository;
         this.userRepository = userRepository;
