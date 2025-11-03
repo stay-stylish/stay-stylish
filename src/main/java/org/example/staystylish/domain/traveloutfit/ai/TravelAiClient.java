@@ -46,7 +46,7 @@ public class TravelAiClient {
         try {
             return objectMapper.readValue(json, AiTravelJsonResponse.class);
         } catch (Exception e) {
-            throw new GlobalException(TravelOutfitErrorCode.AI_PARSE_FAILED);
+            throw new IllegalStateException("AI 응답 JSON 파싱 실패: " + e.getMessage(), e);
         }
     }
 
