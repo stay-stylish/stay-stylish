@@ -44,7 +44,7 @@ public class AuthService {
         // ① 락 획득 시도
         Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "LOCKED", LOCK_TIMEOUT);
         if (Boolean.FALSE.equals(acquired)) {
-            throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
+            throw new UserException(UserErrorCode.SIGNUP_IN_PROGRESS);
         }
 
         try {

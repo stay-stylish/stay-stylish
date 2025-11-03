@@ -21,31 +21,31 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "userProfile", key = "#user.id", unless = "#result == null")
-    public UserResponse getProfile(User user) {
-        log.info("DB에서 사용자 프로필 조회: {}", user.getEmail());
-        return userRepository.findUserSummaryById(user.getId())
+    @Cacheable(value = "userProfile", key = "#userId", unless = "#result == null")
+    public UserResponse getProfile(Long userId) {
+        log.info("DB에서 사용자 프로필 조회: {}", userId);
+        return userRepository.findUserSummaryById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }
 
     // 프로필 수정
     @Transactional
-    @CacheEvict(value = "userProfile", key = "#user.id")
-    public UserResponse updateProfile(User user, String nickname, String stylePreference, Gender gender) {
-        User persistentUser = findUserById(user.getId());
+    @CacheEvict(value = "userProfile", key = "#userId")
+    public UserResponse updateProfile(Long userId, String nickname, String stylePreference, Gender gender) {
+        User persistentUser = findUserById(userId);
         persistentUser.updateProfile(nickname, stylePreference, gender);
 
-        log.info("프로필 수정 완료: {}", user.getEmail());
+        log.info("프로필 수정 완료: {}", persistentUser.getEmail());
         return UserResponse.from(persistentUser);
     }
 
     // 소프트 삭제
     @Transactional
-    @CacheEvict(value = "userProfile", key = "#user.id")
-    public void softDelete(User user) {
-        User persistentUser = findUserById(user.getId());
+    @CacheEvict(value = "userProfile", key = "#userId")
+    public void softDelete(Long userId) {
+        User persistentUser = findUserById(userId);
         persistentUser.softDelete();
-        log.info("사용자 탈퇴 처리 완료: {}", user.getEmail());
+        log.info("사용자 탈퇴 처리 완료: {}", persistentUser.getEmail());
     }
 
     // 공통 유저 조회 헬퍼

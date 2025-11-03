@@ -9,16 +9,12 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.dto.response.ApiResponse;
 import org.example.staystylish.common.security.UserPrincipal;
-import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.code.UserSuccessCode;
 import org.example.staystylish.domain.user.dto.request.LoginRequest;
 import org.example.staystylish.domain.user.dto.request.ProfileUpdateRequest;
 import org.example.staystylish.domain.user.dto.request.RefreshTokenRequest;
 import org.example.staystylish.domain.user.dto.request.SignupRequest;
 import org.example.staystylish.domain.user.dto.response.UserResponse;
-import org.example.staystylish.domain.user.entity.User;
-import org.example.staystylish.domain.user.exception.UserException;
-import org.example.staystylish.domain.user.repository.UserRepository;
 import org.example.staystylish.domain.user.service.AuthService;
 import org.example.staystylish.domain.user.service.EmailVerificationService;
 import org.example.staystylish.domain.user.service.UserService;
@@ -34,7 +30,6 @@ public class UserController {
     private final AuthService authService;
     private final UserService userService;
     private final EmailVerificationService emailVerificationService;
-    private final UserRepository userRepository;
 
     /** 회원가입 + 이메일 인증 메일 발송 */
     @PostMapping("/auth/signup")
@@ -71,7 +66,7 @@ public class UserController {
         return ApiResponse.of(UserSuccessCode.LOGIN_SUCCESS, tokens);
     }
 
-    /** Refresh Token으로 Access Token 재발급 */
+    /** Refresh 토큰으로 Access Token 재발급 */
     @Operation(summary = "Access Token 재발급", description = "/api/v1/auth/refresh")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     @PostMapping("/auth/refresh")
@@ -86,8 +81,8 @@ public class UserController {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     @GetMapping("/users/me")
     public ApiResponse<UserResponse> getMyProfile(@AuthenticationPrincipal UserPrincipal principal) {
-        return ApiResponse.of(UserSuccessCode.PROFILE_FETCH_SUCCESS,
-                userService.getProfile(principal.getUser()));
+        Long userId = principal.getUser().getId();
+        return ApiResponse.of(UserSuccessCode.PROFILE_FETCH_SUCCESS, userService.getProfile(userId));
     }
 
     /** 내 정보 수정 */
@@ -99,13 +94,9 @@ public class UserController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody ProfileUpdateRequest request
     ) {
+        Long userId = principal.getUser().getId();
         return ApiResponse.of(UserSuccessCode.PROFILE_UPDATE_SUCCESS,
-                userService.updateProfile(
-                        principal.getUser(),
-                        request.nickname(),
-                        request.stylePreference(),
-                        request.toGender()
-                ));
+                userService.updateProfile(userId, request.nickname(), request.stylePreference(), request.toGender()));
     }
 
     /** 회원 탈퇴 (소프트 삭제) */
@@ -114,7 +105,7 @@ public class UserController {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     @DeleteMapping("/users/me")
     public ApiResponse<Void> deleteUser(@AuthenticationPrincipal UserPrincipal principal) {
-        userService.softDelete(principal.getUser());
+        userService.softDelete(principal.getUser().getId());
         return ApiResponse.of(UserSuccessCode.USER_DELETE_SUCCESS, null);
     }
 
@@ -127,7 +118,7 @@ public class UserController {
         return ApiResponse.of(UserSuccessCode.LOGOUT_SUCCESS, null);
     }
 
-    /** Base URL 계산 (http://localhost:8080) */
+    /** Base URL 계산 */
     private String getBaseUrl(HttpServletRequest req) {
         String scheme = req.getHeader("X-Forwarded-Proto");
         String host = req.getHeader("X-Forwarded-Host");
