@@ -137,15 +137,8 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
             );
 
             // ai 호출 및 파싱
-            String aiJson;
-            AiTravelJsonResponse aiTravelJsonResponse;
-
-            try {
-                aiJson = aiClient.callForJson(prompt); // AI 호출하여 JSON 문자열 받기
-                aiTravelJsonResponse = aiClient.parse(aiJson); // json 문자열을 파싱해서 객체로 변환
-            } catch (Exception e) {
-                throw new GlobalException(TravelOutfitErrorCode.AI_PARSE_FAILED);
-            }
+            String aiJson = aiClient.callForJson(prompt);
+            AiTravelJsonResponse aiTravelJsonResponse = aiClient.parse(aiJson);
 
             // AI 응답 및 문화 정보 등을 DB에 저장하기 위해서 JsonNode 형태로 변환
             var aiOutfit = new TravelOutfitResponse.AiOutfit(aiTravelJsonResponse.summary(),
@@ -164,13 +157,22 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
             travelOutfitRepository.save(outfit);
             log.info("추천 생성 완료: travelId={}", travelId);
 
-        } catch (Exception e) {
+        } catch (GlobalException ge) {
 
-            // 실패 시 엔티티 상태를 FAILED로 업데이트
-            log.error("추천 생성 실패: travelId={}. 오류: {}", travelId, e.getMessage());
+            // 모든 GlobalException을 여기서 처리
+            log.error("추천 생성 실패 (GlobalException): travelId={}. 오류 코드: {}, 메시지: {}",
+                    travelId, ge.getErrorCode(), ge.getMessage());
 
             // 별도 트랜잭션을 가진 statusUpdater를 호출하여 상태를 FAILED로 변경
-            statusUpdater.updateStatusToFailed(travelId, e.getMessage());
+            statusUpdater.updateStatusToFailed(travelId, ge.getErrorCode().getMessage());
+
+        } catch (Exception e) {
+
+            // 그 외 예기치 못한 Exception 처리
+            log.error("추천 생성 중 알 수 없는 오류: travelId={}. 오류: {}", travelId, e.getMessage(), e);
+
+            // 알 수 없는 오류에 대한 기본 메시지
+            statusUpdater.updateStatusToFailed(travelId, "알 수 없는 서버 오류가 발생했습니다.");
         }
     }
 

@@ -14,7 +14,7 @@ import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitReque
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
-import org.example.staystylish.domain.traveloutfit.service.TravelOutfitService;
+import org.example.staystylish.domain.traveloutfit.service.TravelOutfitServiceImpl;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TravelOutfitController {
 
-    private final TravelOutfitService travelOutfitServiceImpl;
+    private final TravelOutfitServiceImpl travelOutfitServiceImpl;
 
     // 여행 옷차림 추천 생성
     @Operation(summary = "해외 여행 옷차림 추천 생성", description = "해외 여행 옷차림을 추천해줍니다.",
