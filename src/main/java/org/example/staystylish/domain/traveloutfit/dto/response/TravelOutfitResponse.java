@@ -2,9 +2,13 @@ package org.example.staystylish.domain.traveloutfit.dto.response;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.example.staystylish.domain.traveloutfit.entity.RecommendationStatus;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 
 /**
@@ -21,28 +25,74 @@ public record TravelOutfitResponse(
         CulturalConstraints culturalConstraints,
         AiOutfit aiOutfitJson,
         List<String> safetyNotes,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        RecommendationStatus status,
+        String errorMessage
 ) {
 
     /**
      * 엔티티와 계산된 정보로부터 응답 DTO를 생성
      *
-     * @param travelOutfit 저장된 추천 엔티티
-     * @param summary      평균/강수/상태/우산 가이드가 포함된 날씨 요약
-     * @param constraints  문화/복장 제약사항
-     * @param ai           AI 추천 요약/코디 세트
-     * @param notes        여행 안전 노트
      * @return TravelOutfitResponse
      */
-    public static TravelOutfitResponse from(TravelOutfit travelOutfit,
-                                            WeatherSummary summary,
-                                            CulturalConstraints constraints,
-                                            AiOutfit ai,
-                                            List<String> notes) {
+    public static TravelOutfitResponse from(TravelOutfit outfit, ObjectMapper objectMapper) {
+
+        WeatherSummary summary = null;
+        CulturalConstraints constraints = null;
+        AiOutfit aiOutfit = null;
+        List<String> notes = null;
+
+        // 작업이 완료된 경우에만 정보 파싱
+        if (outfit.getStatus() == RecommendationStatus.COMPLETED) {
+
+            // 1. 날씨 요약 (DB에 저장된 정보 사용)
+            summary = new WeatherSummary(
+                    outfit.getAvgTemperature(),
+                    outfit.getAvgHumidity(),
+                    outfit.getRainProbability(),
+                    outfit.getCondition(),
+                    null,
+                    outfit.getUmbrellaSummary()
+            );
+
+            try {
+                TypeReference<List<String>> listTypeRef = new TypeReference<>() {
+                };
+
+                if (outfit.getCulturalConstraintsJson() != null) {
+                    constraints = objectMapper.treeToValue(outfit.getCulturalConstraintsJson(),
+                            CulturalConstraints.class);
+                }
+                if (outfit.getAiOutfitJson() != null) {
+                    aiOutfit = objectMapper.treeToValue(outfit.getAiOutfitJson(),
+                            AiOutfit.class);
+                }
+                if (outfit.getSafetyNotesJson() != null) {
+                    notes = objectMapper.treeToValue(outfit.getSafetyNotesJson(), listTypeRef);
+                }
+            } catch (IOException e) {
+                // 파싱 실패 시, 클라이언트에게 FAILED 상태로 응답
+                return new TravelOutfitResponse(
+                        outfit.getId(), outfit.getUserId(), outfit.getCountry(), outfit.getCity(),
+                        outfit.getStartDate(), outfit.getEndDate(), null, null, null, null,
+                        outfit.getCreatedAt(), RecommendationStatus.FAILED, "결과 파싱 실패: " + e.getMessage());
+            }
+        }
+
         return new TravelOutfitResponse(
-                travelOutfit.getId(), travelOutfit.getUserId(), travelOutfit.getCountry(), travelOutfit.getCity(),
-                travelOutfit.getStartDate(), travelOutfit.getEndDate(), summary, constraints, ai, notes,
-                travelOutfit.getCreatedAt()
+                outfit.getId(),
+                outfit.getUserId(),
+                outfit.getCountry(),
+                outfit.getCity(),
+                outfit.getStartDate(),
+                outfit.getEndDate(),
+                summary, // COMPLETED가 아니면 null
+                constraints, // COMPLETED가 아니면 null
+                aiOutfit, // COMPLETED가 아니면 null
+                notes, // COMPLETED가 아니면 null
+                outfit.getCreatedAt(),
+                outfit.getStatus(),
+                outfit.getErrorMessage()
         );
     }
 
@@ -57,7 +107,11 @@ public record TravelOutfitResponse(
             @JsonInclude(JsonInclude.Include.NON_NULL)
             String umbrellaSummary) {
 
-        // 평균/상태만 필요할 때 사용하는 팩토리 메서드(가이드/요약은 제외)
+        public WeatherSummary(Double avgTemperature, Integer avgHumidity, Integer rainProbability, String condition,
+                              String umbrellaSummary) {
+            this(avgTemperature, avgHumidity, rainProbability, condition, null, umbrellaSummary);
+        }
+
         public static WeatherSummary from(
                 Double avgTemperature,
                 Integer avgHumidity,
@@ -69,8 +123,8 @@ public record TravelOutfitResponse(
                     avgHumidity,
                     rainProbability,
                     condition,
-                    List.of(),
-                    null
+                    List.of(), // rainAdvisories는 비움
+                    null       // umbrellaSummary는 null
             );
         }
     }
