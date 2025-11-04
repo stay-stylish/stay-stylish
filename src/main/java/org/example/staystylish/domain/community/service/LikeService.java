@@ -18,6 +18,7 @@ public class LikeService {
 
     private final PostRepository postRepository;
     private final LikeRepository likeRepository;
+    private final PostCounterService postCounterService;
 
     @Transactional
     public LikeResponse toggleLike(User user, Long postId) {
@@ -32,7 +33,7 @@ public class LikeService {
                 })
                 .orElseGet(() -> {
                     likeRepository.save(Like.builder().post(post).user(user).build());
-                    post.increaseLike();
+                    postCounterService.incrLike(post.getId());
                     return LikeResponse.of(post.getId(), true, post.getLikeCount());
                 });
     }

@@ -57,4 +57,8 @@ public class Post extends BaseEntity {
     public void increaseShare() { this.shareCount++; }
 
     public void softDelete() { this.deletedAt = LocalDateTime.now(); }
+
+    public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
+
+    public void setShareCount(int shareCount) { this.shareCount = shareCount; }
 }

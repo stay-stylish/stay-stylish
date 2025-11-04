@@ -5,11 +5,17 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.cache.support.CompositeCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -68,8 +74,8 @@ public class RedisConfig {
         Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
-
         template.afterPropertiesSet();
+
         return template;
     }
 
@@ -82,8 +88,8 @@ public class RedisConfig {
         return template;
     }
 
-    @Bean
-    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+    @Bean(name = "weatherCacheManager")
+    public CacheManager weatherCacheManager(RedisConnectionFactory connectionFactory) {
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -114,6 +120,35 @@ public class RedisConfig {
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
+    }
+
+    /**
+     *   통합 CacheManager (Caffeine + Redis)
+     * - Caffeine: 빠른 로컬 캐시 (userProfile, postList, postDetail)
+     * - Redis: 글로벌 캐시 (RefreshToken, Shared Cache 등)
+     */
+    @Bean
+    @Primary
+    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        // Local 캐시: Caffeine
+        CaffeineCacheManager caffeine = new CaffeineCacheManager("userProfile", "postList", "postDetail");
+        caffeine.setCaffeine(
+                Caffeine.newBuilder()
+                        .maximumSize(2000)
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .recordStats()
+        );
+
+        // Redis 캐시
+        RedisCacheManager redis = RedisCacheManager.builder(connectionFactory)
+                .cacheDefaults(RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofMinutes(30)))
+                .build();
+
+        // 통합 (Composite)
+        CompositeCacheManager composite = new CompositeCacheManager(caffeine, redis);
+        composite.setFallbackToNoOpCache(true);
+        return composite;
     }
 }
 
