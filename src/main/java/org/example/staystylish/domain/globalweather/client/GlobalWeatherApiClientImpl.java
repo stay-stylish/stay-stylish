@@ -13,6 +13,7 @@ import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.globalweather.config.GlobalWeatherApiProperties;
 import org.example.staystylish.domain.globalweather.dto.GlobalWeatherApiResponse;
 import org.example.staystylish.domain.globalweather.exception.GlobalWeatherErrorCode;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -28,6 +29,7 @@ public class GlobalWeatherApiClientImpl implements GlobalWeatherApiClient {
     private final WebClient weatherApiWebClient;
 
     @Override
+    @Cacheable(value = "globalWeather", key = "#city + ':' + #start + ':' + #end")
     @CircuitBreaker(name = "globalWeatherApi", fallbackMethod = "fallbackGetDailyForecast")
     public List<Daily> getDailyForecast(String city, LocalDate start, LocalDate end) {
 

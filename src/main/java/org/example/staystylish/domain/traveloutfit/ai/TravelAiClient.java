@@ -8,6 +8,7 @@ import org.example.staystylish.domain.traveloutfit.code.TravelOutfitErrorCode;
 import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJsonResponse;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 /**
@@ -30,6 +31,7 @@ public class TravelAiClient {
     }
 
     // chatClient를 사용해서 프롬프트를 AI 모델로 전송하고 응답 받기
+    @Cacheable(value = "travelAi", key = "#prompt")
     @CircuitBreaker(name = "travelAiApi", fallbackMethod = "fallbackCallForJson")
     public String callForJson(String prompt) {
 
@@ -52,7 +54,7 @@ public class TravelAiClient {
 
     public String fallbackCallForJson(String prompt, Throwable e) {
         log.error("[CircuitBreaker] AI 호출 차단. cause={}", e.toString());
-        // 이 예외는 processRecommendation의 catch 블록에서 처리됩니다.
+
         throw new GlobalException(TravelOutfitErrorCode.SERVICE_UNAVAILABLE);
     }
 
