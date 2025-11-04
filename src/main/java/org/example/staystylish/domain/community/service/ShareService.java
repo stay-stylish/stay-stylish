@@ -18,6 +18,7 @@ public class ShareService {
 
     private final PostRepository postRepository;
     private final ShareRepository shareRepository;
+    private final PostCounterService postCounterService;
 
     @Transactional
     public ShareResponse sharePost(User user, Long postId, String platform) {
@@ -34,7 +35,7 @@ public class ShareService {
                 .platform(platform.toUpperCase())
                 .build());
 
-        post.increaseShare();
+        postCounterService.incrShare(post.getId());
         return ShareResponse.of(post.getId(), platform.toUpperCase(), post.getShareCount());
     }
 }
