@@ -5,11 +5,17 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.cache.support.CompositeCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -68,8 +74,8 @@ public class RedisConfig {
         Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
-
         template.afterPropertiesSet();
+
         return template;
     }
 
@@ -83,37 +89,48 @@ public class RedisConfig {
     }
 
     @Bean
+    @Primary
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 
+        // ① Local 캐시 (Caffeine)
+        CaffeineCacheManager caffeine = new CaffeineCacheManager("userProfile", "postList", "postDetail");
+        caffeine.setCaffeine(
+                Caffeine.newBuilder()
+                        .maximumSize(2000)
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .recordStats()
+        );
+
+        // ② Redis 캐시 (기존 weatherCacheManager 로직 통합)
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-
-        objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(),
-                ObjectMapper.DefaultTyping.NON_FINAL);
+        objectMapper.activateDefaultTyping(
+                objectMapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL
+        );
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
-        // 직렬화 설정
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .serializeKeysWith(
-                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
-                        serializer));
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))
+                .entryTtl(Duration.ofMinutes(30)); // 기본 TTL
 
-        // 캐시별 만료 시간 설정
+        // 개별 캐시 TTL 세분화
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-
-        // 날씨 API 캐시 ("globalWeather"): 3시간 (해외 날씨 예보 실시간성이 아니고 하루에 몇번 업데이트)
         cacheConfigurations.put("globalWeather", defaultConfig.entryTtl(Duration.ofHours(3)));
-
-        // AI 추천 결과 캐시 ("travelAi"): 24시간(비용/속도 이슈로 날씨 정보가 동일하면 하루 동안 사용)
         cacheConfigurations.put("travelAi", defaultConfig.entryTtl(Duration.ofHours(24)));
 
-        return RedisCacheManager.RedisCacheManagerBuilder
-                .fromConnectionFactory(connectionFactory)
+        // RedisCacheManager 생성
+        RedisCacheManager redis = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
+
+        // ③ Composite CacheManager (Caffeine + Redis)
+        CompositeCacheManager composite = new CompositeCacheManager(caffeine, redis);
+        composite.setFallbackToNoOpCache(true);
+        return composite;
     }
 }
 
