@@ -28,7 +28,7 @@ public class LikeService {
         return likeRepository.findByPostAndUser(post, user)
                 .map(like -> {
                     likeRepository.delete(like);
-                    post.decreaseLike();
+                    postCounterService.decrLike(post.getId());
                     return LikeResponse.of(post.getId(), false, post.getLikeCount());
                 })
                 .orElseGet(() -> {

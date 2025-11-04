@@ -10,6 +10,7 @@ import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.user.entity.User;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +50,10 @@ public class PostService {
 
     // 게시글 수정
     @Transactional
-    @CacheEvict(value = {"postDetail", "postList"}, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "postDetail", key = "#postId"),
+            @CacheEvict(value = "postList", allEntries = true)
+    })
     public PostResponse updatePost(User user, Long postId, PostRequest request) {
         Post post = findPostById(postId);
         validatePostOwner(user, post);
@@ -60,7 +64,10 @@ public class PostService {
 
     // 게시글 삭제
     @Transactional
-    @CacheEvict(value = {"postDetail", "postList"}, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "postDetail", key = "#postId"),
+            @CacheEvict(value = "postList", allEntries = true)
+    })
     public void deletePost(User user, Long postId) {
         Post post = findPostById(postId);
         validatePostOwner(user, post);

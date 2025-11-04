@@ -88,49 +88,11 @@ public class RedisConfig {
         return template;
     }
 
-    @Bean(name = "weatherCacheManager")
-    public CacheManager weatherCacheManager(RedisConnectionFactory connectionFactory) {
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-
-        objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(),
-                ObjectMapper.DefaultTyping.NON_FINAL);
-
-        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
-
-        // 직렬화 설정
-        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .serializeKeysWith(
-                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
-                        serializer));
-
-        // 캐시별 만료 시간 설정
-        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-
-        // 날씨 API 캐시 ("globalWeather"): 3시간 (해외 날씨 예보 실시간성이 아니고 하루에 몇번 업데이트)
-        cacheConfigurations.put("globalWeather", defaultConfig.entryTtl(Duration.ofHours(3)));
-
-        // AI 추천 결과 캐시 ("travelAi"): 24시간(비용/속도 이슈로 날씨 정보가 동일하면 하루 동안 사용)
-        cacheConfigurations.put("travelAi", defaultConfig.entryTtl(Duration.ofHours(24)));
-
-        return RedisCacheManager.RedisCacheManagerBuilder
-                .fromConnectionFactory(connectionFactory)
-                .cacheDefaults(defaultConfig)
-                .withInitialCacheConfigurations(cacheConfigurations)
-                .build();
-    }
-
-    /**
-     *   통합 CacheManager (Caffeine + Redis)
-     * - Caffeine: 빠른 로컬 캐시 (userProfile, postList, postDetail)
-     * - Redis: 글로벌 캐시 (RefreshToken, Shared Cache 등)
-     */
     @Bean
     @Primary
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // Local 캐시: Caffeine
+
+        // ① Local 캐시 (Caffeine)
         CaffeineCacheManager caffeine = new CaffeineCacheManager("userProfile", "postList", "postDetail");
         caffeine.setCaffeine(
                 Caffeine.newBuilder()
@@ -139,13 +101,33 @@ public class RedisConfig {
                         .recordStats()
         );
 
-        // Redis 캐시
+        // ② Redis 캐시 (기존 weatherCacheManager 로직 통합)
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.activateDefaultTyping(
+                objectMapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL
+        );
+
+        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))
+                .entryTtl(Duration.ofMinutes(30)); // 기본 TTL
+
+        // 개별 캐시 TTL 세분화
+        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+        cacheConfigurations.put("globalWeather", defaultConfig.entryTtl(Duration.ofHours(3)));
+        cacheConfigurations.put("travelAi", defaultConfig.entryTtl(Duration.ofHours(24)));
+
+        // RedisCacheManager 생성
         RedisCacheManager redis = RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(30)))
+                .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
 
-        // 통합 (Composite)
+        // ③ Composite CacheManager (Caffeine + Redis)
         CompositeCacheManager composite = new CompositeCacheManager(caffeine, redis);
         composite.setFallbackToNoOpCache(true);
         return composite;
