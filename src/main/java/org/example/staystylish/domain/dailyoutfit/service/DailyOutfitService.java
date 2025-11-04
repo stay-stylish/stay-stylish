@@ -3,23 +3,21 @@ package org.example.staystylish.domain.dailyoutfit.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.dailyoutfit.code.DailyOutfitErrorCode;
-import org.example.staystylish.domain.dailyoutfit.enums.ShoppingMallLink;
 import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
 import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
-import org.example.staystylish.domain.dailyoutfit.entity.UserItemFeedback;
+import org.example.staystylish.domain.dailyoutfit.entity.UserCategoryFeedback;
 import org.example.staystylish.domain.dailyoutfit.enums.LikeStatus;
-import org.example.staystylish.domain.dailyoutfit.repository.UserItemFeedbackRepository;
+import org.example.staystylish.domain.dailyoutfit.repository.UserCategoryFeedbackRepository;
 import org.example.staystylish.domain.localweather.dto.GpsRequest;
 import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
 import org.example.staystylish.domain.localweather.service.LocalWeatherService;
-import org.example.staystylish.domain.productclassification.entity.Product;
-import org.example.staystylish.domain.productclassification.repository.ProductClassificationRepository;
 import org.example.staystylish.domain.productclassification.service.ProductClassificationService;
 import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -36,19 +34,17 @@ import java.util.stream.Collectors;
 @Transactional
 public class DailyOutfitService {
 
-    private final UserItemFeedbackRepository userItemFeedbackRepository;
-    private final ProductClassificationRepository productClassificationRepository;
+    private final UserCategoryFeedbackRepository userCategoryFeedbackRepository;
     private final UserRepository userRepository;
     private final LocalWeatherService weatherService;
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
     private final ProductClassificationService productClassificationService;
 
-    public DailyOutfitService(UserItemFeedbackRepository userItemFeedbackRepository, ProductClassificationRepository productClassificationRepository,
-                              UserRepository userRepository, LocalWeatherService weatherService, ChatClient chatClient,  ProductClassificationService productClassificationService,
+    public DailyOutfitService(UserCategoryFeedbackRepository userCategoryFeedbackRepository,
+                              UserRepository userRepository, LocalWeatherService weatherService, @Qualifier("chatClientOpenAi") ChatClient chatClient, ProductClassificationService productClassificationService,
                               ObjectMapper objectMapper) {
-        this.userItemFeedbackRepository = userItemFeedbackRepository;
-        this.productClassificationRepository = productClassificationRepository;
+        this.userCategoryFeedbackRepository = userCategoryFeedbackRepository;
         this.userRepository = userRepository;
         this.weatherService = weatherService;
         this.chatClient = chatClient;
@@ -70,11 +66,11 @@ public class DailyOutfitService {
                 .orElseThrow(() -> new GlobalException(DailyOutfitErrorCode.WEATHER_INFO_NOT_FOUND));
 
         // 3. 최근 피드백 조회 (최신순 정렬)
-        List<FeedbackInfoRequest> recentFeedbacks = userItemFeedbackRepository.findByUserId(userId)
+        List<FeedbackInfoRequest> recentFeedbacks = userCategoryFeedbackRepository.findByUserId(userId)
                 .stream()
                 .sorted((f1, f2) -> f2.getCreatedAt().compareTo(f1.getCreatedAt())) // 최신순으로 정렬
                 .limit(5) // 5개만 선택
-                .map(feedback -> new FeedbackInfoRequest(feedback.getProduct().getName(),
+                .map(feedback -> new FeedbackInfoRequest(feedback.getCategoryName(),
                         feedback.getLikeStatus().name()))
                 .collect(Collectors.toList());
 
@@ -176,18 +172,14 @@ public class DailyOutfitService {
     }
 
     // 사용자 피드백을 생성하거나 업데이트합니다.
-    public void createFeedback(Long userId, Long itemId, LikeStatus likeStatus) {
+    public void createFeedback(Long userId, String categoryName, LikeStatus likeStatus) {
 
         // 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
-        // 상품 조회
-        Product product = productClassificationRepository.findById(itemId)
-                .orElseThrow(() -> new GlobalException(DailyOutfitErrorCode.ITEM_NOT_FOUND));
-
         // 기존 피드백 조회
-        Optional<UserItemFeedback> existingFeedback = userItemFeedbackRepository.findByUserIdAndProductId(userId, itemId);
+        Optional<UserCategoryFeedback> existingFeedback = userCategoryFeedbackRepository.findByUserIdAndCategoryName(userId, categoryName);
 
         // 피드백이 존재하면 업데이트, 없으면 새로 생성
         existingFeedback.ifPresentOrElse(
@@ -197,20 +189,20 @@ public class DailyOutfitService {
                     }
                 },
                 () -> {
-                    UserItemFeedback newFeedback = UserItemFeedback.create(user, product, likeStatus);
-                    userItemFeedbackRepository.save(newFeedback);
+                    UserCategoryFeedback newFeedback = UserCategoryFeedback.create(user, categoryName, likeStatus);
+                    userCategoryFeedbackRepository.save(newFeedback);
                 }
         );
     }
 
     // 사용자 피드백을 삭제합니다.
-    public void deleteFeedback(Long userId, Long itemId, LikeStatus likeStatus) {
+    public void deleteFeedback(Long userId, String categoryName, LikeStatus likeStatus) {
 
         // 사용자 피드백 조회 후 삭제
-        userItemFeedbackRepository.findByUserIdAndProductId(userId, itemId)
+        userCategoryFeedbackRepository.findByUserIdAndCategoryName(userId, categoryName)
                 .ifPresent(feedback -> {
                     if (feedback.getLikeStatus() == likeStatus) {
-                        userItemFeedbackRepository.delete(feedback);
+                        userCategoryFeedbackRepository.delete(feedback);
                     }
                 });
     }
