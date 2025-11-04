@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * - chatClientGemini (@Primary): 기본 (Gemini) / chatClientOpenAi : traveloutfit 도메인에서 사용 (OpenAI)
+ * - chatClientGemini (@Primary): 기본 (OpenAI)
  */
 @Configuration
 public class AiClientsConfig {
