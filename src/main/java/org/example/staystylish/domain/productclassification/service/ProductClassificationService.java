@@ -71,11 +71,11 @@ public class ProductClassificationService {
             // AI 응답을 ProductClassificationResponse 객체로 파싱합니다.
             ProductClassificationResponse classificationResponse = objectMapper.readValue(jsonResponse, ProductClassificationResponse.class);
 
-            // Product 엔티티 생성 및 분류 결과 업데이트
-            Product product = Product.create(request.productName());
+            // Product 엔티티 조회 또는 생성
+            Product product = productClassificationRepository.findByName(request.productName())
+                    .orElseGet(() -> Product.create(request.productName()));
+            // 분류 결과 업데이트 및 저장
             product.updateClassification(classificationResponse);
-
-            // Product 엔티티 저장
             productClassificationRepository.save(product);
 
             return classificationResponse;
