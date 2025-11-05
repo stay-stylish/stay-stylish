@@ -42,7 +42,7 @@ public class PostService {
 
     // 게시글 전체 조회
     @Transactional(readOnly = true)
-    @Cacheable(value = "postList", key = "#pageable.pageNumber + ':' + #pageable.pageSize", unless = "#result == null")
+    @Cacheable(value = "postList", key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #sortBy", unless = "#result == null")
     public Page<PostResponse> getAllPosts(org.springframework.data.domain.Pageable pageable, String sortBy) {
         Page<Post> posts;
 
