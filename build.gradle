@@ -104,6 +104,11 @@ dependencies {
     // 메트릭 수집용 (프로메테우스, 그라파나)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'io.micrometer:micrometer-core'
+
+
+
+
 }
 
 tasks.named('test') {
