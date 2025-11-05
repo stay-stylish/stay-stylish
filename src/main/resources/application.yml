@@ -79,7 +79,7 @@ app:
   mail:
     from: no-reply@staystylish.com
 
-# Resilience4j 서킷 브레이커 설정
+# 서킷 브레이커 설정
 resilience4j:
   circuitbreaker:
     configs:
@@ -91,6 +91,26 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
+    instances:
+      globalWeatherApi:
+        base-config: default
+      travelAiApi:
+        base-config: default
+
+  # Retry 설정
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 1000ms
+        # 일시적인 서버/네트워크 오류만 재시도
+        retry-exceptions:
+          - org.example.staystylish.common.exception.advice.ExternalApiException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+        # 비즈니스 로직 오류 등은 재시도 X
+        ignore-exceptions:
+          - org.example.staystylish.common.exception.GlobalException
     instances:
       globalWeatherApi:
         base-config: default
