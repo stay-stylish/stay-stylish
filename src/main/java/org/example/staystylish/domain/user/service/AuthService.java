@@ -1,7 +1,11 @@
 package org.example.staystylish.domain.user.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.staystylish.common.constants.RedisKeyConstants;
 import org.example.staystylish.common.security.JwtProvider;
 import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.dto.request.LoginRequest;
@@ -18,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -31,15 +36,19 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final EmailVerificationService emailVerificationService;
     private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
-    private static final String LOCK_PREFIX = "lock:signup:";
     private static final Duration LOCK_TIMEOUT = Duration.ofSeconds(5);
+
+    // TypeReference 상수화
+    private static final TypeReference<Map<String, String>> TOKEN_DATA_TYPE =
+            new TypeReference<>() {};
 
     // 회원가입
     @Transactional
     public UserResponse signup(SignupRequest request, String baseUrl) {
         String email = request.email();
-        String lockKey = LOCK_PREFIX + email;
+        String lockKey = RedisKeyConstants.signupLockKey(email);
 
         // ① 락 획득 시도
         Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "LOCKED", LOCK_TIMEOUT);
@@ -103,6 +112,60 @@ public class AuthService {
                 "accessToken", accessToken,
                 "refreshToken", refreshToken
         );
+    }
+
+    // OAuth 코드 교환
+    @Transactional(readOnly = true)
+    public Map<String, Object> exchangeOAuthCode(String code) {
+        String codeKey = RedisKeyConstants.oauthCodeKey(code);
+        String tokenJson = redisTemplate.opsForValue().get(codeKey);
+
+        if (tokenJson == null) {
+            log.warn("[OAuth 토큰 교환 실패] 유효하지 않거나 만료된 코드: {}", code);
+            throw new UserException(UserErrorCode.INVALID_SESSION);
+        }
+
+        try {
+            // JSON 파싱
+            Map<String, String> tokenData = objectMapper.readValue(tokenJson, TOKEN_DATA_TYPE);
+
+            // 필수 필드 검증
+            String email = tokenData.get("email");
+            String accessToken = tokenData.get("accessToken");
+            String refreshToken = tokenData.get("refreshToken");
+
+            if (email == null || accessToken == null || refreshToken == null) {
+                log.error("[OAuth 토큰 교환 실패] 필수 필드 누락 - code: {}", code);
+                throw new UserException(UserErrorCode.INVALID_SESSION);
+            }
+
+            // 일회용 코드 삭제 (사용 완료)
+            redisTemplate.delete(codeKey);
+
+            // 응답 생성
+            Map<String, Object> response = new HashMap<>();
+            response.put("accessToken", accessToken);
+            response.put("refreshToken", refreshToken);
+            response.put("isNewUser", Boolean.parseBoolean(tokenData.get("isNewUser")));
+
+            log.info("[OAuth 토큰 교환 완료] email: {}", email);
+
+            return response;
+
+        } catch (JsonProcessingException e) {
+            // JSON 파싱 오류 구체적 처리
+            log.error("[OAuth 토큰 교환 실패] JSON 파싱 오류 - code: {}, json: {}", code, tokenJson, e);
+            throw new UserException(UserErrorCode.INVALID_SESSION);
+
+        } catch (UserException e) {
+            // 비즈니스 로직 예외는 그대로 재던지기
+            throw e;
+
+        } catch (Exception e) {
+            // 예기치 않은 오류 별도 처리 (모니터링/알림 대상)
+            log.error("[OAuth 토큰 교환 실패] 예기치 않은 오류 발생 - code: {}", code, e);
+            throw new UserException(UserErrorCode.INVALID_SESSION);
+        }
     }
 
     // Refresh 재발급

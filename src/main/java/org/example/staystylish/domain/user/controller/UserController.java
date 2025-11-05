@@ -31,6 +31,15 @@ public class UserController {
     private final UserService userService;
     private final EmailVerificationService emailVerificationService;
 
+    /** OAuth 일회용 코드로 토큰 교환 */
+    @Operation(summary = "OAuth 토큰 교환", description = "일회용 코드로 실제 토큰을 발급받습니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    @PostMapping("/auth/oauth/exchange")
+    public ApiResponse<Map<String, Object>> exchangeOAuthCode(@RequestParam String code) {
+        Map<String, Object> tokens = authService.exchangeOAuthCode(code);
+        return ApiResponse.of(UserSuccessCode.TOKEN_EXCHANGE_SUCCESS, tokens);
+    }
+
     /** 회원가입 + 이메일 인증 메일 발송 */
     @PostMapping("/auth/signup")
     @Operation(summary = "회원가입", description = "/api/v1/auth/signup")
