@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -34,6 +35,41 @@ public class AuthService {
 
     private static final String LOCK_PREFIX = "lock:signup:";
     private static final Duration LOCK_TIMEOUT = Duration.ofSeconds(5);
+    private static final String OAUTH_CODE_PREFIX = "oauth:code:";
+
+    // OAuth 코드 교환
+    @Transactional(readOnly = true)
+    public Map<String, Object> exchangeOAuthCode(String code) {
+        String key = LOCK_PREFIX.replace("signup:", "oauth:code:") + code;
+        String tokenJson = redisTemplate.opsForValue().get(key);
+
+        if (tokenJson == null) {
+            throw new UserException(UserErrorCode.INVALID_SESSION);
+        }
+
+        try {
+            // JSON 파싱
+            Map<String, String> tokenData = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(tokenJson, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>() {});
+
+            // 일회용 코드 삭제
+            redisTemplate.delete(key);
+
+            // 응답 생성
+            Map<String, Object> response = new HashMap<>();
+            response.put("accessToken", tokenData.get("accessToken"));
+            response.put("refreshToken", tokenData.get("refreshToken"));
+            response.put("isNewUser", Boolean.parseBoolean(tokenData.get("isNewUser")));
+
+            log.info("[OAuth 토큰 교환 완료] email: {}", tokenData.get("email"));
+
+            return response;
+
+        } catch (Exception e) {
+            log.error("OAuth 토큰 교환 실패", e);
+            throw new UserException(UserErrorCode.INVALID_SESSION);
+        }
+    }
 
     // 회원가입
     @Transactional

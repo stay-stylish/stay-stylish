@@ -16,7 +16,8 @@ public enum UserSuccessCode implements SuccessCode {
     LOGOUT_SUCCESS(HttpStatus.OK, "로그아웃 성공"),
     TOKEN_REISSUE_SUCCESS(HttpStatus.OK, "토큰 발급 성공"),
     EMAIL_VERIFY_SUCCESS(HttpStatus.OK, "이메일 인증이 완료되었습니다."),
-    EMAIL_VERIFY_RESEND_SUCCESS(HttpStatus.OK, "인증 메일을 재발송했습니다.");
+    EMAIL_VERIFY_RESEND_SUCCESS(HttpStatus.OK, "인증 메일을 재발송했습니다."),
+    TOKEN_EXCHANGE_SUCCESS(HttpStatus.OK, "토큰 교환 성공");
 
     private final HttpStatus httpStatus;
     private final String message;
