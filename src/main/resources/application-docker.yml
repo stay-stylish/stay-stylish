@@ -23,7 +23,7 @@ spring:
 
 app:
   oauth:
-    redirect-uri: http://localhost:3000/oauth/success
+    redirect-uri: http://localhost:3001/oauth/success
 
 logging:
   level:
