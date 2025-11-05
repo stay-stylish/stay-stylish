@@ -20,7 +20,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
 
   mail:
     username: ${EMAIL_USERNAME}      # 로컬 .env 파일에 Gmail 주소
