@@ -37,7 +37,7 @@ public class UserController {
     @PostMapping("/auth/oauth/exchange")
     public ApiResponse<Map<String, Object>> exchangeOAuthCode(@RequestParam String code) {
         Map<String, Object> tokens = authService.exchangeOAuthCode(code);
-        return ApiResponse.of(UserSuccessCode.LOGIN_SUCCESS, tokens);
+        return ApiResponse.of(UserSuccessCode.TOKEN_EXCHANGE_SUCCESS, tokens);
     }
 
     /** 회원가입 + 이메일 인증 메일 발송 */

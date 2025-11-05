@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.staystylish.common.constants.RedisKeyConstants;
 import org.example.staystylish.domain.user.service.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,8 +33,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     @Value("${app.oauth.redirect-uri}")
     private String redirectUri;
 
-    private static final String CODE_PREFIX = "oauth:code:";
-    private static final Duration CODE_TTL = Duration.ofMinutes(5); // 5분 유효
+    private static final Duration CODE_TTL = Duration.ofMinutes(5);
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -61,9 +61,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         tokenData.put("email", email);
         tokenData.put("isNewUser", String.valueOf(userPrincipal.isNewUser()));
 
-        // Redis에 일회용 코드 저장 (5분 TTL)
+        // Redis에 일회용 코드 저장 (중앙 관리 상수 사용)
         String tokenJson = objectMapper.writeValueAsString(tokenData);
-        redisTemplate.opsForValue().set(CODE_PREFIX + code, tokenJson, CODE_TTL);
+        String codeKey = RedisKeyConstants.oauthCodeKey(code);
+        redisTemplate.opsForValue().set(codeKey, tokenJson, CODE_TTL);
 
         log.info("[OAuth2 Success] 일회용 코드 발급 완료 - email: {}, code: {}", email, code);
 
