@@ -84,7 +84,7 @@ public class DailyOutfitService {
         // 6. AI 응답 파싱
         try {
             return objectMapper.readValue(jsonResponse, DailyOutfitRecommendationResponse.class);
-        } catch (Exception e) {
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             // 파싱 실패 시, 대체 응답 반환
             return DailyOutfitRecommendationResponse.from(
                     "AI 응답을 처리하는 데 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", List.of());

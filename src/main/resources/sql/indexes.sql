@@ -1,1 +1,0 @@
-CREATE INDEX idx_user_feedback_user_id_created_at ON user_category_feedback (user_id, created_at DESC);
