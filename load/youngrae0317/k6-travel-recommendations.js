@@ -19,8 +19,8 @@ export const options = {
 
 // 테스트 환경 변수
 const BASE_URL = __ENV.BASE_URL || 'http://host.docker.internal:8080/api/v1';
-const LOGIN_EMAIL = __ENV.EMAIL || 'isp1229@naver.com';     // 테스트 계정 이메일
-const LOGIN_PASSWORD = __ENV.PASSWORD || 'password123!'; // 테스트 계정 비밀번호
+const LOGIN_EMAIL = __ENV.EMAIL || '';     // 테스트 계정 이메일
+const LOGIN_PASSWORD = __ENV.PASSWORD || ''; // 테스트 계정 비밀번호
 
 // API 타임아웃
 const LOGIN_TIMEOUT = '15s';
