@@ -1,6 +1,7 @@
 package org.example.staystylish.domain.community.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "게시글", description = "게시글 관련 API")
@@ -52,14 +54,19 @@ public class PostController {
     }
 
     @Operation(summary = "모든 게시물 조회", description = "모든 게시물을 조회합니다.",
-            security = {@SecurityRequirement(name = "bearerAuth")})
+            security = {@SecurityRequirement(name = "bearerAuth")},
+            parameters = {
+                    @Parameter(name = "sortBy", description = "정렬 기준 (latest: 최신순, like: 좋아요순), 기본값: latest",
+                            example = "latest")
+            })
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     @GetMapping
     public ApiResponse<Page<PostResponse>> getAllPosts(
-            @PageableDefault(page = 0, size = 10) Pageable pageable) {
+            @PageableDefault(page = 0, size = 10) Pageable pageable,
+            @RequestParam(defaultValue = "latest", required = false) String sortBy) {
         return ApiResponse.of(
                 CommunitySuccessCode.POST_GET_SUCCESS,
-                postService.getAllPosts(pageable)
+                postService.getAllPosts(pageable, sortBy)
         );
     }
 
@@ -84,4 +91,3 @@ public class PostController {
         return ApiResponse.of(CommunitySuccessCode.POST_DELETE_SUCCESS, null);
     }
 }
-
