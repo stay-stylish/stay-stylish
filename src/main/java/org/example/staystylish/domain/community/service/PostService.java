@@ -42,10 +42,18 @@ public class PostService {
 
     // 게시글 전체 조회
     @Transactional(readOnly = true)
-    @Cacheable(value = "postList", key = "#pageable.pageNumber + ':' + #pageable.pageSize", unless = "#result == null")
-    public Page<PostResponse> getAllPosts(org.springframework.data.domain.Pageable pageable) {
-        return postRepository.findAll(pageable)
-                .map(PostResponse::from);
+    @Cacheable(value = "postList", key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #sortBy", unless = "#result == null")
+    public Page<PostResponse> getAllPosts(org.springframework.data.domain.Pageable pageable, String sortBy) {
+        Page<Post> posts;
+
+        if ("like".equalsIgnoreCase(sortBy)) {
+            posts = postRepository.findAllOrderByLike(pageable);
+        } else {
+            // 기본값: 최신순
+            posts = postRepository.findAllOrderByLatest(pageable);
+        }
+
+        return posts.map(PostResponse::from);
     }
 
     // 게시글 수정

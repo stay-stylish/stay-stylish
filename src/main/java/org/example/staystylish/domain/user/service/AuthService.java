@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -44,7 +45,6 @@ public class AuthService {
     private static final TypeReference<Map<String, String>> TOKEN_DATA_TYPE =
             new TypeReference<>() {};
 
-    // 회원가입
     @Transactional
     public UserResponse signup(SignupRequest request, String baseUrl) {
         String email = request.email();
@@ -57,13 +57,56 @@ public class AuthService {
         }
 
         try {
-            // ② 이메일 중복 체크
-            if (userRepository.existsByEmail(email)) {
+            // ② 삭제되지 않은 활성 사용자 확인
+            if (userRepository.existsByEmailAndNotDeleted(email)) {
+                log.warn("중복된 활성 사용자 가입 시도: {}", email);
                 throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
             }
 
-            // ③ 사용자 생성
-            User user = User.builder()
+            // ③ 탈퇴한 사용자 확인 및 복구
+            Optional<User> deletedUserOpt = userRepository.findByEmailIncludeDeleted(email);
+            User user;
+
+            if (deletedUserOpt.isPresent()) {
+                user = deletedUserOpt.get();
+
+                // 탈퇴한 사용자 확인
+                if (user.isDeleted()) {
+                    log.info("탈퇴한 계정 복구 시작: {}", email);
+
+                    // 기본정보 업데이트
+                    user.updateProfile(
+                            request.nickname(),
+                            request.stylePreference(),
+                            request.gender() != null ? Gender.valueOf(request.gender().toUpperCase()) : null
+                    );
+
+                    // 비밀번호 업데이트
+                    user.setPassword(passwordEncoder.encode(request.password()));
+
+                    // 삭제 상태 복구
+                    user.setDeletedAt(null);
+
+                    // 이메일 인증 상태 초기화
+                    user.setEmailVerified(false);
+
+                    userRepository.save(user);
+
+                    log.info("탈퇴한 계정 복구 완료: {}", email);
+
+                    // 인증 메일 발송
+                    emailVerificationService.issueTokenAndSendMail(user, baseUrl);
+
+                    return UserResponse.from(user);
+                } else {
+                    // 이 경우는 existsByEmailAndNotDeleted에서 걸러져야 하지만, 혹시 모르니 처리
+                    log.warn("활성 사용자 가입 시도: {}", email);
+                    throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
+                }
+            }
+
+            // ④ 신규 사용자 생성
+            user = User.builder()
                     .email(email)
                     .password(passwordEncoder.encode(request.password()))
                     .nickname(request.nickname())
@@ -75,14 +118,14 @@ public class AuthService {
 
             userRepository.save(user);
 
-            // ④ 인증 메일 발송
+            // ⑤ 인증 메일 발송
             emailVerificationService.issueTokenAndSendMail(user, baseUrl);
-            log.info("회원가입 완료 및 인증 메일 발송: {}", user.getEmail());
+            log.info("신규 회원가입 완료 및 인증 메일 발송: {}", user.getEmail());
 
             return UserResponse.from(user);
 
         } finally {
-            // ⑤ 락 해제
+            // ⑥ 락 해제
             redisTemplate.delete(lockKey);
         }
     }

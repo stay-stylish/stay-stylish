@@ -12,6 +12,13 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
+
+    @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.email = :email AND u.deletedAt IS NULL")
+    boolean existsByEmailAndNotDeleted(@Param("email") String email);
+
+    @Query("SELECT u FROM User u WHERE u.email = :email")
+    Optional<User> findByEmailIncludeDeleted(@Param("email") String email);
+
     boolean existsByEmail(String email);
 
     @Query("SELECT u FROM User u WHERE u.deletedAt IS NULL")
@@ -38,4 +45,3 @@ public interface UserRepository extends JpaRepository<User, Long> {
 """)
     Optional<UserResponse> findUserSummaryById(@Param("userId") Long userId);
 }
-
