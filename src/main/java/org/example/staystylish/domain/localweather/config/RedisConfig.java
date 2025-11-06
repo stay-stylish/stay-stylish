@@ -120,6 +120,7 @@ public class RedisConfig {
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
         cacheConfigurations.put("globalWeather", defaultConfig.entryTtl(Duration.ofHours(3)));
         cacheConfigurations.put("travelAi", defaultConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigurations.put("dailyAi", defaultConfig.entryTtl(Duration.ofHours(24)));
 
         // RedisCacheManager 생성
         RedisCacheManager redis = RedisCacheManager.builder(connectionFactory)
@@ -133,4 +134,3 @@ public class RedisConfig {
         return composite;
     }
 }
-

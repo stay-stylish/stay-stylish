@@ -2,6 +2,7 @@ package org.example.staystylish.domain.dailyoutfit.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.staystylish.common.exception.GlobalException;
+import org.example.staystylish.domain.dailyoutfit.ai.DailyAiClient;
 import org.example.staystylish.domain.dailyoutfit.code.DailyOutfitErrorCode;
 import org.example.staystylish.domain.dailyoutfit.dto.request.FeedbackInfoRequest;
 import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
@@ -16,8 +17,6 @@ import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.entity.User;
 import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -37,17 +36,18 @@ public class DailyOutfitService {
     private final UserCategoryFeedbackRepository userCategoryFeedbackRepository;
     private final UserRepository userRepository;
     private final LocalWeatherService weatherService;
-    private final ChatClient chatClient;
+    private final DailyAiClient dailyAiClient;
     private final ObjectMapper objectMapper;
     private final ProductClassificationService productClassificationService;
 
     public DailyOutfitService(UserCategoryFeedbackRepository userCategoryFeedbackRepository,
-                              UserRepository userRepository, LocalWeatherService weatherService, @Qualifier("chatClientOpenAi") ChatClient chatClient, ProductClassificationService productClassificationService,
+                              UserRepository userRepository, LocalWeatherService weatherService,
+                              DailyAiClient dailyAiClient, ProductClassificationService productClassificationService,
                               ObjectMapper objectMapper) {
         this.userCategoryFeedbackRepository = userCategoryFeedbackRepository;
         this.userRepository = userRepository;
         this.weatherService = weatherService;
-        this.chatClient = chatClient;
+        this.dailyAiClient = dailyAiClient;
         this.objectMapper = objectMapper;
         this.productClassificationService = productClassificationService;
     }
@@ -79,30 +79,15 @@ public class DailyOutfitService {
         String userPrompt = buildUserPrompt(user, todayWeather, recentFeedbacks);
 
         // 5. AI 호출
-        String jsonResponse = chatClient.prompt()
-                .system(systemPrompt)
-                .user(userPrompt)
-                .call()
-                .content();
+        String jsonResponse = dailyAiClient.callForJson(systemPrompt, userPrompt);
 
         // 6. AI 응답 파싱
         try {
-            // AI 응답에서 JSON 부분만 추출
-            int startIndex = jsonResponse.indexOf('{');
-            int endIndex = jsonResponse.lastIndexOf('}');
-            if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
-                jsonResponse = jsonResponse.substring(startIndex, endIndex + 1);
-            }
-
-            DailyOutfitRecommendationResponse response = objectMapper.readValue(jsonResponse, DailyOutfitRecommendationResponse.class);
-
-            return response;
-        } catch (Exception e) {
+            return objectMapper.readValue(jsonResponse, DailyOutfitRecommendationResponse.class);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             // 파싱 실패 시, 대체 응답 반환
-            DailyOutfitRecommendationResponse fallbackResponse = DailyOutfitRecommendationResponse.from(
+            return DailyOutfitRecommendationResponse.from(
                     "AI 응답을 처리하는 데 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", List.of());
-
-            return fallbackResponse;
         }
     }
 

@@ -24,4 +24,12 @@ public interface UserCategoryFeedbackRepository extends JpaRepository<UserCatego
      * @return List<UserCategoryFeedback>
      */
     List<UserCategoryFeedback> findByUserId(Long userId);
+
+    /**
+     * 특정 사용자의 최신 피드백 N개를 조회합니다.
+     *
+     * @param userId 사용자 ID
+     * @return List<UserCategoryFeedback>
+     */
+    List<UserCategoryFeedback> findTop5ByUserIdOrderByCreatedAtDesc(Long userId);
 }
