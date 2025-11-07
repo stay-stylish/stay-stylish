@@ -61,21 +61,28 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         tokenData.put("email", email);
         tokenData.put("isNewUser", String.valueOf(userPrincipal.isNewUser()));
 
-        // Redis에 일회용 코드 저장 (중앙 관리 상수 사용)
+        // Redis에 일회용 코드 저장
         String tokenJson = objectMapper.writeValueAsString(tokenData);
         String codeKey = RedisKeyConstants.oauthCodeKey(code);
         redisTemplate.opsForValue().set(codeKey, tokenJson, CODE_TTL);
 
-        log.info("[OAuth2 Success] 일회용 코드 발급 완료 - email: {}, code: {}", email, code);
+        log.info("[OAuth2 Success] 일회용 코드 발급 완료 - email: {}, code: {}, isNewUser: {}",
+                email, code, userPrincipal.isNewUser());
 
-        // 프론트엔드로 일회용 코드만 전달
-        String baseRedirect = userPrincipal.isNewUser()
-                ? redirectUri + "/signup/additional"
-                : redirectUri + "/home";
+        String baseUrl = redirectUri.endsWith("/") ? redirectUri.substring(0, redirectUri.length() - 1) : redirectUri;
 
-        String redirectUrl = baseRedirect + "?code=" + code;
+        String path = userPrincipal.isNewUser()
+                ? "/oauth/success/signup/additional"
+                : "/oauth/success/home";
 
-        log.info("[OAuth2 Success] redirect: {}", redirectUrl);
+        String redirectUrl = baseUrl + path + "?code=" + code;
+
+        log.info("[OAuth2 Success] redirect URL: {}", redirectUrl);
+
+        log.info("[DEBUG] redirectUri from config: {}", redirectUri);
+        log.info("[DEBUG] baseUrl after processing: {}", baseUrl);
+        log.info("[DEBUG] path: {}", path);
+        log.info("[DEBUG] final redirectUrl: {}", redirectUrl);
 
         response.sendRedirect(redirectUrl);
     }

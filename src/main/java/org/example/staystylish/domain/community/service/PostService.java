@@ -23,6 +23,7 @@ public class PostService {
 
     // 게시글 작성
     @Transactional
+    @CacheEvict(value = "postList", allEntries = true)
     public PostResponse createPost(User user, PostRequest request) {
         Post post = Post.builder()
                 .author(user)
