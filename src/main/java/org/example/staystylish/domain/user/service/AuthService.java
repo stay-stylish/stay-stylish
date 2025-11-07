@@ -25,6 +25,8 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -160,13 +162,26 @@ public class AuthService {
     // OAuth 코드 교환
     @Transactional(readOnly = true)
     public Map<String, Object> exchangeOAuthCode(String code) {
-        String codeKey = RedisKeyConstants.oauthCodeKey(code);
-        String tokenJson = redisTemplate.opsForValue().get(codeKey);
+        log.info("[OAuth 교환] ===== 시작 =====");
+        log.info("[OAuth 교환] 받은 코드: {}", code);
 
+        // 코드 키 생성
+        String codeKey = RedisKeyConstants.oauthCodeKey(code);
+        log.info("[OAuth 교환] 코드 키: {}", codeKey);
+
+        // Redis 조회
+        log.info("[OAuth 교환] Redis 조회 시작...");
+        String tokenJson = redisTemplate.opsForValue().get(codeKey);
+        log.info("[OAuth 교환] Redis 조회 결과: {}", tokenJson != null ? "있음" : "없음");
+
+        // DEBUG: Redis에 키가 있는지 확인
         if (tokenJson == null) {
             log.warn("[OAuth 토큰 교환 실패] 유효하지 않거나 만료된 코드: {}", code);
             throw new UserException(UserErrorCode.INVALID_SESSION);
         }
+
+        log.info("[OAuth 교환] Redis에서 코드 조회 성공");
+        log.info("[OAuth 교환] 토큰 데이터 (처음 100자): {}", tokenJson.substring(0, Math.min(100, tokenJson.length())));
 
         try {
             // JSON 파싱
