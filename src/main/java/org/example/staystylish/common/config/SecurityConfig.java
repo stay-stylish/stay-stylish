@@ -41,8 +41,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/api/v1/auth/**", "/oauth2/**", "/api/v1/weather/*", "/favicon.ico",
-                                "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/oauth2/**",
+                                "/login/oauth2/**",
+                                "/api/v1/weather/*",
+                                "/favicon.ico",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
@@ -54,7 +61,7 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
                         .failureHandler((request, response, exception) -> {
-                            log.error("❌ OAuth2 로그인 실패 - 원인: {}", exception.getMessage(), exception);
+                            log.error("OAuth2 로그인 실패 - 원인: {}", exception.getMessage(), exception);
                             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 로그인 실패");
                         })
                 );

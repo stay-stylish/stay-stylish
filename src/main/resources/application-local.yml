@@ -38,7 +38,7 @@ springdoc:
 #  OAuth Redirect URI (로컬용)
 app:
   oauth:
-    redirect-uri: http://localhost:3000/oauth/success
+    redirect-uri: http://localhost:3000
 
 #  로컬에서만 SQL 상세 로깅 활성화
 logging:

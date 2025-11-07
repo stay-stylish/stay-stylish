@@ -9,6 +9,8 @@ import org.example.staystylish.domain.community.exception.CommunityException;
 import org.example.staystylish.domain.community.repository.LikeRepository;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.user.entity.User;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,10 @@ public class LikeService {
     private final PostCounterService postCounterService;
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "postDetail", key = "#postId"),
+            @CacheEvict(value = "postList", allEntries = true)
+    })
     public LikeResponse toggleLike(User user, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityException(CommunityErrorCode.POST_NOT_FOUND));
