@@ -27,7 +27,6 @@ public class WebConfig implements WebMvcConfigurer {
         // 로그인 엔드포인트
         registry.addMapping("/login/**")
                 .allowedOriginPatterns(
-                        "http://localhost:3000",
                         frontendUrl
                 )
                 .allowedMethods("GET", "POST")

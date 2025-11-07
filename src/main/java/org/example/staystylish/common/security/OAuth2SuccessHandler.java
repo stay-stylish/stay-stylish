@@ -66,9 +66,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String codeKey = RedisKeyConstants.oauthCodeKey(code);
         redisTemplate.opsForValue().set(codeKey, tokenJson, CODE_TTL);
 
-        log.info("[OAuth2 Success] 일회용 코드 발급 완료 - email: {}, code: {}, isNewUser: {}",
-                email, code, userPrincipal.isNewUser());
-
         String baseUrl = redirectUri.endsWith("/") ? redirectUri.substring(0, redirectUri.length() - 1) : redirectUri;
 
         String path = userPrincipal.isNewUser()
@@ -76,13 +73,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 : "/oauth/success/home";
 
         String redirectUrl = baseUrl + path + "?code=" + code;
-
-        log.info("[OAuth2 Success] redirect URL: {}", redirectUrl);
-
-        log.info("[DEBUG] redirectUri from config: {}", redirectUri);
-        log.info("[DEBUG] baseUrl after processing: {}", baseUrl);
-        log.info("[DEBUG] path: {}", path);
-        log.info("[DEBUG] final redirectUrl: {}", redirectUrl);
 
         response.sendRedirect(redirectUrl);
     }

@@ -176,37 +176,7 @@ public class AuthService {
 
         // DEBUG: Redis에 키가 있는지 확인
         if (tokenJson == null) {
-            log.error("[OAuth 교환] 코드를 Redis에서 찾을 수 없습니다!");
-            log.error("[OAuth 교환] 코드 키: {}", codeKey);
-
-            // 🔧 디버그: Redis의 모든 키 확인 (테스트용)
-            try {
-                Set<String> keys = redisTemplate.keys("oauth:*");
-                log.error("[OAuth 교환] Redis의 oauth: 키 목록: {}", keys);
-                if (keys != null && !keys.isEmpty()) {
-                    log.error("[OAuth 교환] 저장된 키 개수: {}", keys.size());
-                    keys.forEach(k -> {
-                        String value = redisTemplate.opsForValue().get(k);
-                        log.error("[OAuth 교환] 키: {}, 값 있음: {}", k, value != null);
-
-                        // TTL 확인
-                        Long ttl = redisTemplate.getExpire(k, TimeUnit.SECONDS);
-                        log.error("[OAuth 교환] 키: {}, TTL: {} 초", k, ttl);
-                    });
-                } else {
-                    log.error("[OAuth 교환] Redis에 oauth: 로 시작하는 키가 없습니다!");
-                }
-            } catch (Exception e) {
-                log.error("[OAuth 교환] Redis 키 조회 중 오류", e);
-            }
-
-            // 가능한 원인들
-            log.error("[OAuth 교환] 가능한 원인:");
-            log.error("[OAuth 교환]   1. OAuth2SuccessHandler에서 Redis에 저장 안 함");
-            log.error("[OAuth 교환]   2. 저장했지만 TTL으로 인해 이미 삭제됨");
-            log.error("[OAuth 교환]   3. Redis 연결 오류");
-            log.error("[OAuth 교换]   4. 코드 포맷이 다름");
-
+            log.warn("[OAuth 토큰 교환 실패] 유효하지 않거나 만료된 코드: {}", code);
             throw new UserException(UserErrorCode.INVALID_SESSION);
         }
 
@@ -215,60 +185,43 @@ public class AuthService {
 
         try {
             // JSON 파싱
-            log.info("[OAuth 교환] JSON 파싱 시작...");
             Map<String, String> tokenData = objectMapper.readValue(tokenJson, TOKEN_DATA_TYPE);
-            log.info("[OAuth 교환] JSON 파싱 성공");
 
             // 필수 필드 검증
             String email = tokenData.get("email");
             String accessToken = tokenData.get("accessToken");
             String refreshToken = tokenData.get("refreshToken");
-            String isNewUserStr = tokenData.get("isNewUser");
-
-            log.info("[OAuth 교환] 필드 확인:");
-            log.info("[OAuth 교환]   - email: {}", email != null ? "있음" : "없음");
-            log.info("[OAuth 교환]   - accessToken: {}", accessToken != null ? "있음" : "없음");
-            log.info("[OAuth 교환]   - refreshToken: {}", refreshToken != null ? "있음" : "없음");
-            log.info("[OAuth 교환]   - isNewUser: {}", isNewUserStr != null ? isNewUserStr : "없음");
 
             if (email == null || accessToken == null || refreshToken == null) {
-                log.error("[OAuth 교환] 필수 필드 누락");
-                log.error("[OAuth 교환] 전체 데이터: {}", tokenData);
+                log.error("[OAuth 토큰 교환 실패] 필수 필드 누락 - code: {}", code);
                 throw new UserException(UserErrorCode.INVALID_SESSION);
             }
 
             // 일회용 코드 삭제 (사용 완료)
-            log.info("[OAuth 교환] 코드 삭제 중... 키: {}", codeKey);
-            Boolean deleted = redisTemplate.delete(codeKey);
-            log.info("[OAuth 교환] 코드 삭제 결과: {}", deleted ? "성공" : "실패");
+            redisTemplate.delete(codeKey);
 
             // 응답 생성
             Map<String, Object> response = new HashMap<>();
             response.put("accessToken", accessToken);
             response.put("refreshToken", refreshToken);
-            response.put("isNewUser", Boolean.parseBoolean(isNewUserStr));
+            response.put("isNewUser", Boolean.parseBoolean(tokenData.get("isNewUser")));
 
-            log.info("[OAuth 교환] 교환 완료");
-            log.info("[OAuth 교환] 이메일: {}", email);
-            log.info("[OAuth 교환] isNewUser: {}", isNewUserStr);
-            log.info("[OAuth 교환] ===== 성공 =====");
+            log.info("[OAuth 토큰 교환 완료] email: {}", email);
 
             return response;
 
         } catch (JsonProcessingException e) {
-            // JSON 파싱 오류
-            log.error("[OAuth 교환] JSON 파싱 오류", e);
-            log.error("[OAuth 교환] 원본 JSON: {}", tokenJson);
+            // JSON 파싱 오류 구체적 처리
+            log.error("[OAuth 토큰 교환 실패] JSON 파싱 오류 - code: {}, json: {}", code, tokenJson, e);
             throw new UserException(UserErrorCode.INVALID_SESSION);
 
         } catch (UserException e) {
             // 비즈니스 로직 예외는 그대로 재던지기
-            log.error("[OAuth 교환] 비즈니스 예외: {}", e.getMessage());
             throw e;
 
         } catch (Exception e) {
-            // 예기치 않은 오류
-            log.error("[OAuth 교환] 예기치 않은 오류", e);
+            // 예기치 않은 오류 별도 처리 (모니터링/알림 대상)
+            log.error("[OAuth 토큰 교환 실패] 예기치 않은 오류 발생 - code: {}", code, e);
             throw new UserException(UserErrorCode.INVALID_SESSION);
         }
     }
