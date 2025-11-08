@@ -61,6 +61,9 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
         this.meterRegistry = meterRegistry;
         this.serviceKey = serviceKey;
         this.xmlMapper = new XmlMapper();
+
+
+        System.out.println("✅ MeterRegistry injected: " + (meterRegistry != null));
     }
 
     @Override
