@@ -6,15 +6,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.staystylish.common.constants.RedisKeyConstants;
 import org.example.staystylish.domain.user.service.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -24,9 +28,12 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final JwtProvider jwtProvider;
     private final ObjectMapper objectMapper;
     private final RefreshTokenService refreshTokenService;
+    private final StringRedisTemplate redisTemplate;
 
     @Value("${app.oauth.redirect-uri}")
     private String redirectUri;
+
+    private static final Duration CODE_TTL = Duration.ofMinutes(5);
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -44,21 +51,28 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         // Redis에 Refresh Token 저장
         refreshTokenService.save(email, refreshToken, jwtProvider.getRefreshTokenValidity());
 
-        log.info("[OAuth2 Success] JWT 발급 완료 - email: {}", email);
+        // 일회용 코드 생성
+        String code = UUID.randomUUID().toString();
 
-        String baseRedirect = userPrincipal.isNewUser()
-                ? redirectUri + "/signup/additional"
-                : redirectUri + "/home";
+        // 토큰 정보를 JSON으로 저장
+        Map<String, String> tokenData = new HashMap<>();
+        tokenData.put("accessToken", accessToken);
+        tokenData.put("refreshToken", refreshToken);
+        tokenData.put("email", email);
+        tokenData.put("isNewUser", String.valueOf(userPrincipal.isNewUser()));
 
-        // 프론트엔드로 전달 (쿼리 파라미터)
-        String redirectUrl = String.format(
-                "%s?accessToken=%s&refreshToken=%s",
-                baseRedirect,
-                URLEncoder.encode(accessToken, StandardCharsets.UTF_8),
-                URLEncoder.encode(refreshToken, StandardCharsets.UTF_8)
-        );
+        // Redis에 일회용 코드 저장
+        String tokenJson = objectMapper.writeValueAsString(tokenData);
+        String codeKey = RedisKeyConstants.oauthCodeKey(code);
+        redisTemplate.opsForValue().set(codeKey, tokenJson, CODE_TTL);
 
-        log.info("[OAuth2 Success] redirect: {}", redirectUrl);
+        String baseUrl = redirectUri.endsWith("/") ? redirectUri.substring(0, redirectUri.length() - 1) : redirectUri;
+
+        String path = userPrincipal.isNewUser()
+                ? "/oauth/success/signup/additional"
+                : "/oauth/success/home";
+
+        String redirectUrl = baseUrl + path + "?code=" + code;
 
         response.sendRedirect(redirectUrl);
     }

@@ -2,6 +2,8 @@ package org.example.staystylish.domain.globalweather.client;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -9,9 +11,11 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.staystylish.common.exception.GlobalException;
+import org.example.staystylish.common.exception.advice.ExternalApiException;
 import org.example.staystylish.domain.globalweather.config.GlobalWeatherApiProperties;
 import org.example.staystylish.domain.globalweather.dto.GlobalWeatherApiResponse;
 import org.example.staystylish.domain.globalweather.exception.GlobalWeatherErrorCode;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -22,11 +26,14 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class GlobalWeatherApiClientImpl implements GlobalWeatherApiClient {
 
-    private static final Duration TIMEOUT = Duration.ofSeconds(3); // timeout 추가
+    private static final Duration TIMEOUT = Duration.ofSeconds(10); // timeout 추가
     private final GlobalWeatherApiProperties props;
     private final WebClient weatherApiWebClient;
 
     @Override
+    @Cacheable(value = "globalWeather", key = "#city + ':' + #start + ':' + #end")
+    @Retry(name = "globalWeatherApi", fallbackMethod = "fallbackGetDailyForecast")
+    @CircuitBreaker(name = "globalWeatherApi", fallbackMethod = "fallbackGetDailyForecast")
     public List<Daily> getDailyForecast(String city, LocalDate start, LocalDate end) {
 
         LocalDate today = LocalDate.now();
@@ -58,7 +65,8 @@ public class GlobalWeatherApiClientImpl implements GlobalWeatherApiClient {
                                 .flatMap(body -> Mono.error(new GlobalException(GlobalWeatherErrorCode.INVALID_CITY))))
                 .onStatus(HttpStatusCode::is5xxServerError, r ->
                         r.bodyToMono(String.class).flatMap(
-                                body -> Mono.error(new GlobalException(GlobalWeatherErrorCode.EXTERNAL_UNAVAILABLE))))
+                                body -> Mono.error(new ExternalApiException(
+                                        "WeatherAPI 500번대 오류 발생"))))
                 .bodyToMono(GlobalWeatherApiResponse.class)
                 .timeout(TIMEOUT)
                 .block();
@@ -82,6 +90,15 @@ public class GlobalWeatherApiClientImpl implements GlobalWeatherApiClient {
             }
         }
         return list;
+    }
+
+    public List<Daily> fallbackGetDailyForecast(String city, LocalDate start, LocalDate end, Throwable t) {
+
+        log.warn("[CircuitBreaker] 날씨 API 호출 차단. city={}, start={}, end={}, cause={}", city, start, end,
+                t.getMessage());
+        // 이 예외는 processRecommendation의 catch 블록에서 처리됩니다.
+        throw new GlobalException(GlobalWeatherErrorCode.EXTERNAL_UNAVAILABLE);
+
     }
 }
 

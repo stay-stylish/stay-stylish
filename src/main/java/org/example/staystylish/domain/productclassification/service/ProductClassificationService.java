@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.staystylish.domain.dailyoutfit.dto.response.DailyOutfitRecommendationResponse;
 import org.example.staystylish.domain.productclassification.dto.request.ProductClassificationRequest;
 import org.example.staystylish.domain.productclassification.dto.response.ProductClassificationResponse;
+import org.example.staystylish.domain.productclassification.entity.Product;
+import org.example.staystylish.domain.productclassification.repository.ProductClassificationRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 import java.util.List;
 
@@ -21,6 +21,7 @@ public class ProductClassificationService {
 
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
+    private final ProductClassificationRepository productClassificationRepository;
 
     // 시스템 지시사항 부분
     private final String systemPrompt = """
@@ -38,9 +39,11 @@ public class ProductClassificationService {
             [출력]: { "category": "하의", "sub_category": "슬랙스", "style_tags": ["미니멀", "포멀"] }
             """;
 
-    public ProductClassificationService(ChatClient chatClient, ObjectMapper objectMapper) {
+    public ProductClassificationService(ChatClient chatClient, ObjectMapper objectMapper,
+                                        ProductClassificationRepository productClassificationRepository) {
         this.chatClient = chatClient;
         this.objectMapper = objectMapper;
+        this.productClassificationRepository = productClassificationRepository;
     }
 
     // 상품 분류 요청을 받아 AI 모델을 통해 분류 결과를 반환합니다.
@@ -67,6 +70,14 @@ public class ProductClassificationService {
         try {
             // AI 응답을 ProductClassificationResponse 객체로 파싱합니다.
             ProductClassificationResponse classificationResponse = objectMapper.readValue(jsonResponse, ProductClassificationResponse.class);
+
+            // Product 엔티티 조회 또는 생성
+            Product product = productClassificationRepository.findByName(request.productName())
+                    .orElseGet(() -> Product.create(request.productName()));
+            // 분류 결과 업데이트 및 저장
+            product.updateClassification(classificationResponse);
+            productClassificationRepository.save(product);
+
             return classificationResponse;
         } catch (JsonProcessingException e) {
             throw new RuntimeException("AI 응답을 파싱하는 데 실패했습니다.", e);
@@ -75,9 +86,10 @@ public class ProductClassificationService {
 
 
     // DailyOutfitRecommendationResponse 형태로 변환
+
     /**
      * classifyAndRecommend
-     *
+     * <p>
      * - classify() 결과를 DailyOutfitRecommendationResponse로 변환
      * - DailyOutfitController/Service에서 추천 텍스트 + 추천 카테고리 생성 시 사용
      *

@@ -71,4 +71,16 @@ public class User extends BaseEntity {
     public boolean isDeleted() {
         return deletedAt != null;
     }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
 }
