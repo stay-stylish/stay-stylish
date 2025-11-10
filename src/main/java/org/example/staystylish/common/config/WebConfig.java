@@ -16,23 +16,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
+        registry.addMapping("/**")
                 .allowedOriginPatterns(
                         "http://localhost:8080",
                         frontendUrl,
                         vercelFrontendUrl
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
-
-        // 로그인 엔드포인트
-        registry.addMapping("/login/**")
-                .allowedOriginPatterns(
-                        frontendUrl
-                )
-                .allowedMethods("GET", "POST")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
