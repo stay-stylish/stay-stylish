@@ -11,24 +11,18 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
+    @Value("${app.frontend.deploy-url:https://www.staystylish.store}")
+    private String vercelFrontendUrl;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
+        registry.addMapping("/**")
                 .allowedOriginPatterns(
                         "http://localhost:8080",
-                        frontendUrl
+                        frontendUrl,
+                        vercelFrontendUrl
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
-
-        // 로그인 엔드포인트
-        registry.addMapping("/login/**")
-                .allowedOriginPatterns(
-                        frontendUrl
-                )
-                .allowedMethods("GET", "POST")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
