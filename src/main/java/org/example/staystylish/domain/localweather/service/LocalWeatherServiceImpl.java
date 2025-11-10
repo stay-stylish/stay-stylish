@@ -157,6 +157,11 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
                     meterRegistry.counter("weather.api.requests.total", "result", "fail").increment();
                     meterRegistry.counter("weather.service.requests.fail").increment();
                     totalSample.stop(meterRegistry.timer("weather.service.duration.seconds", "result", "fail"));
+                    if (cachedObj != null) {
+                        meterRegistry.counter("weather.cache.hit").increment();
+                    } else {
+                        meterRegistry.counter("weather.cache.miss").increment();
+                    }
                     return Mono.error(new ExternalApiException("KMA request failed: " + ex.getMessage(), ex));
                 });
     }
