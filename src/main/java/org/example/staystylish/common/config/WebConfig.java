@@ -18,12 +18,17 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOriginPatterns(
-                        "http://localhost:8080",
-                        frontendUrl,
-                        vercelFrontendUrl
+                        frontendUrl,       // http://localhost:3000
+                        vercelFrontendUrl  // https://www.staystylish.store
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                .allowedHeaders("*")
+                .allowedHeaders(
+                        "Content-Type",
+                        "Authorization",
+                        "Accept",
+                        "Origin",
+                        "X-Requested-With"
+                )
                 .allowCredentials(true)
                 .maxAge(3600);
     }
