@@ -12,7 +12,6 @@ import org.example.staystylish.domain.localweather.dto.UserWeatherResponse;
 import org.example.staystylish.domain.localweather.service.LocalWeatherService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +24,7 @@ import reactor.core.publisher.Mono;
  */
 
 @Tag(name = "국내 날씨", description = "국내 날씨 받아오는 API")
-@CrossOrigin(origins = "*") // 개발용: 프론트엔드 다른 포트 허용
+// @CrossOrigin(origins = "*") // 개발용: 프론트엔드 다른 포트 허용
 @RestController
 @RequestMapping("/api/v1/weather")
 @RequiredArgsConstructor
