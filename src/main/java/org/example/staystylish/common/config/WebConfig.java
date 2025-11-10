@@ -11,12 +11,16 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
+    @Value("${app.frontend.deploy-url:https://www.staystylish.store}")
+    private String vercelFrontendUrl;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
                 .allowedOriginPatterns(
                         "http://localhost:8080",
-                        frontendUrl
+                        frontendUrl,
+                        vercelFrontendUrl
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
