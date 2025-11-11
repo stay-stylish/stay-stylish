@@ -1,4 +1,4 @@
-package org.example.staystylish.domain.localweather.config;
+package org.example.staystylish.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

@@ -40,6 +40,46 @@ public class PostCounterService {
         redis.opsForSet().add(UPDATED_SHARE_SET, String.valueOf(postId));
     }
 
+    public int getLikeCount(Long postId) {
+        String countStr = redis.opsForValue().get(LIKE_KEY + postId);
+        if (countStr == null) {
+            // Redis에 값이 없으면 DB에서 조회해서 Redis에 설정
+            Post post = postRepository.findById(postId).orElse(null);
+            if (post != null) {
+                int dbCount = post.getLikeCount();
+                redis.opsForValue().set(LIKE_KEY + postId, String.valueOf(dbCount));
+                return dbCount;
+            }
+            return 0;
+        }
+        try {
+            return Integer.parseInt(countStr);
+        } catch (NumberFormatException e) {
+            log.warn("[PostCounter] 좋아요 카운트 파싱 실패 postId={}", postId, e);
+            return 0;
+        }
+    }
+
+    public int getShareCount(Long postId) {
+        String countStr = redis.opsForValue().get(SHARE_KEY + postId);
+        if (countStr == null) {
+            // Redis에 값이 없으면 DB에서 조회해서 Redis에 설정
+            Post post = postRepository.findById(postId).orElse(null);
+            if (post != null) {
+                int dbCount = post.getShareCount();
+                redis.opsForValue().set(SHARE_KEY + postId, String.valueOf(dbCount));
+                return dbCount;
+            }
+            return 0;
+        }
+        try {
+            return Integer.parseInt(countStr);
+        } catch (NumberFormatException e) {
+            log.warn("[PostCounter] 공유 카운트 파싱 실패 postId={}", postId, e);
+            return 0;
+        }
+    }
+
     @Transactional
     @Scheduled(fixedRate = 300000) // 300,000ms = 5분
     public void syncToDB() {

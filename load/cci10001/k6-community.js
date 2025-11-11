@@ -6,12 +6,12 @@ export const options = {
     duration: '15s', // 테스트 시간
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://app:8080';
+const BASE_URL = __ENV.BASE_URL || 'http://host.docker.internal:8080';
 
 export default function () {
     // 로그인
     const loginRes = http.post(`${BASE_URL}/api/v1/auth/login`, JSON.stringify({
-        email: 'digeu42@gmail.com',
+        email: 'fuitshine@naver.com',
         password: 'password123!',
     }), { headers: { 'Content-Type': 'application/json' } });
 

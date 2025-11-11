@@ -1,11 +1,11 @@
 package org.example.staystylish.domain.community.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.domain.community.consts.CommunityErrorCode;
+import org.example.staystylish.common.exception.GlobalException;
+import org.example.staystylish.domain.community.code.CommunityErrorCode;
 import org.example.staystylish.domain.community.dto.response.LikeResponse;
 import org.example.staystylish.domain.community.entity.Like;
 import org.example.staystylish.domain.community.entity.Post;
-import org.example.staystylish.domain.community.exception.CommunityException;
 import org.example.staystylish.domain.community.repository.LikeRepository;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.user.entity.User;
@@ -29,18 +29,22 @@ public class LikeService {
     })
     public LikeResponse toggleLike(User user, Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new CommunityException(CommunityErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(CommunityErrorCode.POST_NOT_FOUND));
 
         return likeRepository.findByPostAndUser(post, user)
                 .map(like -> {
                     likeRepository.delete(like);
                     postCounterService.decrLike(post.getId());
-                    return LikeResponse.of(post.getId(), false, post.getLikeCount());
+                    // Redis에서 최신 카운트 조회
+                    int currentCount = postCounterService.getLikeCount(post.getId());
+                    return LikeResponse.of(post.getId(), false, currentCount);
                 })
                 .orElseGet(() -> {
                     likeRepository.save(Like.builder().post(post).user(user).build());
                     postCounterService.incrLike(post.getId());
-                    return LikeResponse.of(post.getId(), true, post.getLikeCount());
+                    // Redis에서 최신 카운트 조회
+                    int currentCount = postCounterService.getLikeCount(post.getId());
+                    return LikeResponse.of(post.getId(), true, currentCount);
                 });
     }
 }

@@ -15,7 +15,6 @@ import org.example.staystylish.domain.localweather.service.LocalWeatherService;
 import org.example.staystylish.domain.productclassification.service.ProductClassificationService;
 import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.entity.User;
-import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,7 +56,7 @@ public class DailyOutfitService {
 
         // 1. 사용자 정보 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(UserErrorCode.USER_NOT_FOUND));
 
         // 2. 날씨 정보 조회 (localweather 도메인 사용)
         GpsRequest gpsRequest = new GpsRequest(latitude, longitude);
@@ -161,7 +160,7 @@ public class DailyOutfitService {
 
         // 사용자 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(UserErrorCode.USER_NOT_FOUND));
 
         // 기존 피드백 조회
         Optional<UserCategoryFeedback> existingFeedback = userCategoryFeedbackRepository.findByUserIdAndCategoryName(userId, categoryName);
