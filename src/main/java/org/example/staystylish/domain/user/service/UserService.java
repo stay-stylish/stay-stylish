@@ -2,11 +2,11 @@ package org.example.staystylish.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.dto.response.UserResponse;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.example.staystylish.domain.user.entity.User;
-import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -25,7 +25,7 @@ public class UserService {
     public UserResponse getProfile(Long userId) {
         log.info("DB에서 사용자 프로필 조회: {}", userId);
         return userRepository.findUserSummaryById(userId)
-                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(UserErrorCode.USER_NOT_FOUND));
     }
 
     // 프로필 수정
@@ -51,6 +51,6 @@ public class UserService {
     // 공통 유저 조회 헬퍼
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(UserErrorCode.USER_NOT_FOUND));
     }
 }

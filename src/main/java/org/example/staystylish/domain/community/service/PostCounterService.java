@@ -40,6 +40,34 @@ public class PostCounterService {
         redis.opsForSet().add(UPDATED_SHARE_SET, String.valueOf(postId));
     }
 
+    public int getLikeCount(Long postId) {
+        return getCount(postId, LIKE_KEY, Post::getLikeCount, "좋아요");
+    }
+
+    public int getShareCount(Long postId) {
+        return getCount(postId, SHARE_KEY, Post::getShareCount, "공유");
+    }
+
+    private int getCount(Long postId, String keyPrefix, java.util.function.Function<Post, Integer> dbCountExtractor, String metricName) {
+        String countStr = redis.opsForValue().get(keyPrefix + postId);
+        if (countStr == null) {
+            // Redis에 값이 없으면 DB에서 조회해서 Redis에 설정
+            return postRepository.findById(postId)
+                    .map(post -> {
+                        int dbCount = dbCountExtractor.apply(post);
+                        redis.opsForValue().set(keyPrefix + postId, String.valueOf(dbCount));
+                        return dbCount;
+                    })
+                    .orElse(0);
+        }
+        try {
+            return Integer.parseInt(countStr);
+        } catch (NumberFormatException e) {
+            log.warn("[PostCounter] {} 카운트 파싱 실패 postId={}", metricName, postId, e);
+            return 0;
+        }
+    }
+
     @Transactional
     @Scheduled(fixedRate = 300000) // 300,000ms = 5분
     public void syncToDB() {

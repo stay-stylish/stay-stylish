@@ -134,13 +134,13 @@ services:
       - influxdb
     working_dir: /scripts
     volumes:
-      - ./load:/scripts:ro
+      - ./load/cci10001:/scripts
     entrypoint:
       - "k6"
       - "run"
       - "--out"
       - "influxdb=http://influxdb:8086/k6"
-      - "/scripts/k6-scripts.js"
+      - "/scripts/k6-community.js"
     networks:
       - monitoring-net
 
