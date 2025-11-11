@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +21,7 @@ import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJsonResp
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.RainAdvisory;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.WeatherAverages;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
@@ -50,6 +49,7 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
     private final TravelAiPromptBuilder promptBuilder;
     private final ObjectMapper objectMapper;
     private final TravelOutfitStatusUpdater statusUpdater;
+    private final WeatherAveragesCalculator weatherAveragesCalculator;
 
     // (동기) 추천 요청 접수
     public TravelOutfit requestRecommendation(Long userId, TravelOutfitRequest request) {
@@ -93,34 +93,8 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
                 throw new GlobalException(TravelOutfitErrorCode.WEATHER_FETCH_FAILED);
             }
 
-            // 여행 일 기간 동안의 날씨 정보 평균 계산 (평균 온도/습도/강수확률)
-            double totalTemp = 0.0, totalHumidity = 0.0, totalRainProb = 0.0;
-
-            for (Daily daily : dailyList) {
-                if (daily.avgTempC() != null) {
-                    totalTemp += daily.avgTempC();
-                }
-                if (daily.avgHumidity() != null) {
-                    totalHumidity += daily.avgHumidity();
-                }
-                if (daily.rainChance() != null) {
-                    totalRainProb += daily.rainChance();
-                }
-            }
-
-            int daysSize = dailyList.size();
-            double avgTemp = (daysSize > 0) ? totalTemp / daysSize : 0.0;
-            int avgHumidity = (daysSize > 0) ? (int) Math.round(totalHumidity / daysSize) : 0;
-            int avgRainProb = (daysSize > 0) ? (int) Math.round(totalRainProb / daysSize) : 0;
-
-            String condition = dailyList.stream()
-                    .map(Daily::conditionText)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.groupingBy(s -> s, Collectors.counting()))
-                    .entrySet().stream()
-                    .max(Map.Entry.comparingByValue())
-                    .map(Map.Entry::getKey)
-                    .orElse("알 수 없음");
+            // 평균 날씨 계산 로직 호출
+            WeatherAverages averages = weatherAveragesCalculator.calculate(dailyList);
 
             // Gender ENUM을 한글 문자열 변환
             String userGender = toKorean(gender);
@@ -133,7 +107,7 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
             String prompt = promptBuilder.buildPrompt(
                     request.country(), request.city(),
                     request.startDate(), request.endDate(),
-                    userGender, condition, avgTemp, umbrellaSummary
+                    userGender, averages.condition(), averages.avgTemp(), umbrellaSummary
             );
 
             // ai 호출 및 파싱
@@ -151,7 +125,7 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
             var safetyNotesNode = objectMapper.valueToTree(safetyNotes);
 
             // 엔티티 상태를 성공으로 변경
-            outfit.complete(avgTemp, avgHumidity, avgRainProb, condition,
+            outfit.complete(averages.avgTemp(), averages.avgHumidity(), averages.avgRainProb(), averages.condition(),
                     cultureNode, aiNode,
                     safetyNotesNode, umbrellaSummary);
             travelOutfitRepository.save(outfit);
