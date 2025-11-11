@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.dto.response.ApiResponse;
 import org.example.staystylish.common.security.UserPrincipal;
-import org.example.staystylish.domain.community.consts.CommunitySuccessCode;
+import org.example.staystylish.domain.community.code.CommunitySuccessCode;
 import org.example.staystylish.domain.community.dto.response.LikeResponse;
 import org.example.staystylish.domain.community.service.LikeService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

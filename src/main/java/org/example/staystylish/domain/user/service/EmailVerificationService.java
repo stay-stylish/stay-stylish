@@ -2,10 +2,10 @@ package org.example.staystylish.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.common.mail.EmailService;
 import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.entity.User;
-import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -41,14 +41,14 @@ public class EmailVerificationService {
         String email = redisTemplate.opsForValue().get(PREFIX + token);
 
         if (email == null) {
-            throw new UserException(UserErrorCode.EMAIL_TOKEN_INVALID);
+            throw new GlobalException(UserErrorCode.EMAIL_TOKEN_INVALID);
         }
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserException(UserErrorCode.EMAIL_USER_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(UserErrorCode.EMAIL_USER_NOT_FOUND));
 
         if (user.isEmailVerified()) {
-            throw new UserException(UserErrorCode.EMAIL_ALREADY_VERIFIED);
+            throw new GlobalException(UserErrorCode.EMAIL_ALREADY_VERIFIED);
         }
 
         user.verifyEmail();
@@ -60,10 +60,10 @@ public class EmailVerificationService {
     @Transactional
     public void resend(String email, String baseUrl) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserException(UserErrorCode.EMAIL_USER_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(UserErrorCode.EMAIL_USER_NOT_FOUND));
 
         if (user.isEmailVerified()) {
-            throw new UserException(UserErrorCode.EMAIL_ALREADY_VERIFIED);
+            throw new GlobalException(UserErrorCode.EMAIL_ALREADY_VERIFIED);
         }
 
         issueTokenAndSendMail(user, baseUrl);

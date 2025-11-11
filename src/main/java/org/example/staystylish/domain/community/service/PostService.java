@@ -1,11 +1,11 @@
 package org.example.staystylish.domain.community.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.domain.community.consts.CommunityErrorCode;
+import org.example.staystylish.common.exception.GlobalException;
+import org.example.staystylish.domain.community.code.CommunityErrorCode;
 import org.example.staystylish.domain.community.dto.request.PostRequest;
 import org.example.staystylish.domain.community.dto.response.PostResponse;
 import org.example.staystylish.domain.community.entity.Post;
-import org.example.staystylish.domain.community.exception.CommunityException;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.user.entity.User;
 import org.springframework.cache.annotation.CacheEvict;
@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final PostCounterService postCounterService;
 
     // 게시글 작성
     @Transactional
@@ -87,12 +88,12 @@ public class PostService {
     // 공통 유틸 메소드
     private Post findPostById(Long postId) {
         return postRepository.findById(postId)
-                .orElseThrow(() -> new CommunityException(CommunityErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(CommunityErrorCode.POST_NOT_FOUND));
     }
 
     private void validatePostOwner(User user, Post post) {
         if (!post.getAuthor().getId().equals(user.getId())) {
-            throw new CommunityException(CommunityErrorCode.ACCESS_DENIED);
+            throw new GlobalException(CommunityErrorCode.ACCESS_DENIED);
         }
     }
 }
