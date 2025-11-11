@@ -31,21 +31,20 @@ public class LikeService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new GlobalException(CommunityErrorCode.POST_NOT_FOUND));
 
-        return likeRepository.findByPostAndUser(post, user)
+        boolean isLiked = likeRepository.findByPostAndUser(post, user)
                 .map(like -> {
                     likeRepository.delete(like);
                     postCounterService.decrLike(post.getId());
-                    // Redis에서 최신 카운트 조회
-                    int currentCount = postCounterService.getLikeCount(post.getId());
-                    return LikeResponse.of(post.getId(), false, currentCount);
+                    return false;
                 })
                 .orElseGet(() -> {
                     likeRepository.save(Like.builder().post(post).user(user).build());
                     postCounterService.incrLike(post.getId());
-                    // Redis에서 최신 카운트 조회
-                    int currentCount = postCounterService.getLikeCount(post.getId());
-                    return LikeResponse.of(post.getId(), true, currentCount);
+                    return true;
                 });
+
+        int currentCount = postCounterService.getLikeCount(post.getId());
+        return LikeResponse.of(post.getId(), isLiked, currentCount);
     }
 }
 

@@ -41,41 +41,29 @@ public class PostCounterService {
     }
 
     public int getLikeCount(Long postId) {
-        String countStr = redis.opsForValue().get(LIKE_KEY + postId);
-        if (countStr == null) {
-            // Redis에 값이 없으면 DB에서 조회해서 Redis에 설정
-            Post post = postRepository.findById(postId).orElse(null);
-            if (post != null) {
-                int dbCount = post.getLikeCount();
-                redis.opsForValue().set(LIKE_KEY + postId, String.valueOf(dbCount));
-                return dbCount;
-            }
-            return 0;
-        }
-        try {
-            return Integer.parseInt(countStr);
-        } catch (NumberFormatException e) {
-            log.warn("[PostCounter] 좋아요 카운트 파싱 실패 postId={}", postId, e);
-            return 0;
-        }
+        return getCount(postId, LIKE_KEY, Post::getLikeCount, "좋아요");
     }
 
     public int getShareCount(Long postId) {
-        String countStr = redis.opsForValue().get(SHARE_KEY + postId);
+        return getCount(postId, SHARE_KEY, Post::getShareCount, "공유");
+    }
+
+    private int getCount(Long postId, String keyPrefix, java.util.function.Function<Post, Integer> dbCountExtractor, String metricName) {
+        String countStr = redis.opsForValue().get(keyPrefix + postId);
         if (countStr == null) {
             // Redis에 값이 없으면 DB에서 조회해서 Redis에 설정
-            Post post = postRepository.findById(postId).orElse(null);
-            if (post != null) {
-                int dbCount = post.getShareCount();
-                redis.opsForValue().set(SHARE_KEY + postId, String.valueOf(dbCount));
-                return dbCount;
-            }
-            return 0;
+            return postRepository.findById(postId)
+                    .map(post -> {
+                        int dbCount = dbCountExtractor.apply(post);
+                        redis.opsForValue().set(keyPrefix + postId, String.valueOf(dbCount));
+                        return dbCount;
+                    })
+                    .orElse(0);
         }
         try {
             return Integer.parseInt(countStr);
         } catch (NumberFormatException e) {
-            log.warn("[PostCounter] 공유 카운트 파싱 실패 postId={}", postId, e);
+            log.warn("[PostCounter] {} 카운트 파싱 실패 postId={}", metricName, postId, e);
             return 0;
         }
     }
