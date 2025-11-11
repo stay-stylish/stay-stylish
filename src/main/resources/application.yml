@@ -87,6 +87,10 @@ app:
   mail:
     from: no-reply@staystylish.com
 
+  frontend:
+    deploy-url: "https://www.staystylish.store"
+    url: "http://localhost:3000"
+
 # 서킷 브레이커 설정
 resilience4j:
   circuitbreaker:
