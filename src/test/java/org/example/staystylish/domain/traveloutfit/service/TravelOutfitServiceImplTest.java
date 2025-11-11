@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +33,7 @@ import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResp
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.CulturalConstraints;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.WeatherAverages;
 import org.example.staystylish.domain.traveloutfit.entity.RecommendationStatus;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
@@ -76,6 +78,8 @@ class TravelOutfitServiceImplTest {
     private ObjectMapper objectMapper;
     @Mock
     private TravelOutfitStatusUpdater statusUpdater;
+    @Mock
+    private WeatherAveragesCalculator weatherAveragesCalculator;
 
     private TravelOutfit pendingOutfit;
     private TravelOutfit completedOutfit;
@@ -186,8 +190,12 @@ class TravelOutfitServiceImplTest {
         when(travelOutfitRepository.findById(TRAVEL_ID)).thenReturn(Optional.of(pendingOutfit));
 
         var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
+        List<Daily> mockDailyList = List.of(weather);
         when(globalWeatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
-                .thenReturn(List.of(weather));
+                .thenReturn(mockDailyList);
+
+        WeatherAverages mockAverages = new WeatherAverages(20.0, 60, 10, "맑음");
+        when(weatherAveragesCalculator.calculate(mockDailyList)).thenReturn(mockAverages);
 
         when(promptBuilder.buildPrompt(
                 anyString(), anyString(), any(LocalDate.class), any(LocalDate.class),
@@ -221,6 +229,7 @@ class TravelOutfitServiceImplTest {
         assertThat(savedEntity.getSafetyNotesJson()).isEqualTo(mockJsonNode);
         assertThat(savedEntity.getUmbrellaSummary()).isNotNull();
 
+        verify(weatherAveragesCalculator, times(1)).calculate(mockDailyList);
         verify(statusUpdater, never()).updateStatusToFailed(anyLong(), anyString());
     }
 
@@ -240,6 +249,7 @@ class TravelOutfitServiceImplTest {
                 eq(TravelOutfitErrorCode.RECOMMENDATION_NOT_FOUND.getMessage())
         );
         verify(globalWeatherApiClient, never()).getDailyForecast(any(), any(), any());
+        verify(weatherAveragesCalculator, never()).calculate(any());
         verify(aiClient, never()).callForJson(anyString());
         verify(travelOutfitRepository, never()).save(any());
     }
@@ -262,6 +272,7 @@ class TravelOutfitServiceImplTest {
                 eq(TRAVEL_ID),
                 eq(TravelOutfitErrorCode.WEATHER_FETCH_FAILED.getMessage())
         );
+        verify(weatherAveragesCalculator, never()).calculate(any());
         verify(travelOutfitRepository, never()).save(any());
     }
 
@@ -273,8 +284,12 @@ class TravelOutfitServiceImplTest {
         when(travelOutfitRepository.findById(TRAVEL_ID)).thenReturn(Optional.of(pendingOutfit));
 
         var weather = new Daily(START_DATE, 20.0, 60.0, 10, "맑음");
+        List<Daily> mockDailyList = List.of(weather);
         when(globalWeatherApiClient.getDailyForecast(CITY, START_DATE, END_DATE))
-                .thenReturn(List.of(weather));
+                .thenReturn(mockDailyList);
+
+        WeatherAverages mockAverages = new WeatherAverages(20.0, 60, 10, "맑음");
+        when(weatherAveragesCalculator.calculate(mockDailyList)).thenReturn(mockAverages);
 
         when(promptBuilder.buildPrompt(anyString(), anyString(), any(), any(), anyString(), anyString(), anyDouble(),
                 anyString()))
@@ -287,6 +302,9 @@ class TravelOutfitServiceImplTest {
         travelOutfitServiceImpl.processRecommendation(TRAVEL_ID, request, GENDER);
 
         // then
+        // 'Exception' catch 블록에서 처리
+        verify(weatherAveragesCalculator, times(1)).calculate(mockDailyList);
+
         // 'Exception' catch 블록에서 처리
         verify(statusUpdater).updateStatusToFailed(
                 eq(TRAVEL_ID),
