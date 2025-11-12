@@ -402,4 +402,25 @@ class TravelOutfitServiceImplTest {
         assertThat(response.culturalConstraints()).isNull();
         assertThat(response.safetyNotes()).isNull();
     }
+
+    @Test
+    @DisplayName("추천 상세 조회 실패 - JSON 파싱 오류")
+    void getRecommendationDetail_Fail_JsonParsingException() throws JsonProcessingException {
+
+        // given
+        when(travelOutfitRepository.findByIdAndUserId(TRAVEL_ID, USER_ID))
+                .thenReturn(Optional.of(completedOutfit));
+
+        when(objectMapper.treeToValue(eq(mockJsonNode), eq(CulturalConstraints.class)))
+                .thenThrow(new JsonProcessingException("Test Parse Fail") {
+                }); // {}를 붙여 익명 클래스로 처리
+
+        // when & then
+        assertThatThrownBy(() -> travelOutfitServiceImpl.getRecommendationDetail(USER_ID, TRAVEL_ID))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage(TravelOutfitErrorCode.AI_PARSE_FAILED.getMessage());
+
+        verify(objectMapper, never()).treeToValue(eq(mockJsonNode), eq(AiOutfit.class));
+        verify(objectMapper, never()).treeToValue(eq(mockJsonNode), any(TypeReference.class));
+    }
 }
