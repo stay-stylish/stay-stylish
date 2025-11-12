@@ -3,6 +3,8 @@ package org.example.staystylish.domain.traveloutfit.service;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Comparator.comparing;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -19,9 +21,13 @@ import org.example.staystylish.domain.traveloutfit.code.TravelOutfitErrorCode;
 import org.example.staystylish.domain.traveloutfit.dto.request.TravelOutfitRequest;
 import org.example.staystylish.domain.traveloutfit.dto.response.AiTravelJsonResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.AiOutfit;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.CulturalConstraints;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.RainAdvisory;
+import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitResponse.WeatherSummary;
 import org.example.staystylish.domain.traveloutfit.dto.response.TravelOutfitSummaryResponse;
 import org.example.staystylish.domain.traveloutfit.dto.response.WeatherAverages;
+import org.example.staystylish.domain.traveloutfit.entity.RecommendationStatus;
 import org.example.staystylish.domain.traveloutfit.entity.TravelOutfit;
 import org.example.staystylish.domain.traveloutfit.repository.TravelOutfitRepository;
 import org.example.staystylish.domain.user.entity.Gender;
@@ -167,7 +173,49 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
         TravelOutfit outfit = travelOutfitRepository.findByIdAndUserId(travelId, userId)
                 .orElseThrow(() -> new GlobalException(TravelOutfitErrorCode.RECOMMENDATION_NOT_FOUND));
 
-        return TravelOutfitResponse.from(outfit, objectMapper);
+        // 파싱할 객체들 초기화
+        WeatherSummary summary = null;
+        CulturalConstraints constraints = null;
+        AiOutfit aiOutfit = null;
+        List<String> safetyNotes = null;
+
+        // 추천 상태가 완료된 경우에만 파싱 로직 수행
+        if (outfit.getStatus() == RecommendationStatus.COMPLETED) {
+
+            // WeatherSummary 생성
+            summary = new WeatherSummary(
+                    outfit.getAvgTemperature(),
+                    outfit.getAvgHumidity(),
+                    outfit.getRainProbability(),
+                    outfit.getCondition(),
+                    null,
+                    outfit.getUmbrellaSummary()
+            );
+
+            // JSON 파싱
+            try {
+                TypeReference<List<String>> listTypeRef = new TypeReference<>() {
+                };
+
+                if (outfit.getCulturalConstraintsJson() != null) {
+                    constraints = objectMapper.treeToValue(outfit.getCulturalConstraintsJson(),
+                            CulturalConstraints.class);
+                }
+                if (outfit.getAiOutfitJson() != null) {
+                    aiOutfit = objectMapper.treeToValue(outfit.getAiOutfitJson(),
+                            AiOutfit.class);
+                }
+                if (outfit.getSafetyNotesJson() != null) {
+                    safetyNotes = objectMapper.treeToValue(outfit.getSafetyNotesJson(), listTypeRef);
+                }
+            } catch (JsonProcessingException e) {
+                // 파싱 실패 시, 서비스 레이어에서 예외 처리
+                log.error("TravelOutfit JSON 파싱 실패: travelId={}, userId={}", travelId, userId, e);
+                throw new GlobalException(TravelOutfitErrorCode.AI_PARSE_FAILED);
+            }
+        }
+
+        return TravelOutfitResponse.from(outfit, summary, constraints, aiOutfit, safetyNotes);
     }
 
     // 성별을 한국어 문자열로 변환
