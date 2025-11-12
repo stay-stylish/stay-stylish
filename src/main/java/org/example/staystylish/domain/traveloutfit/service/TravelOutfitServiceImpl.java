@@ -177,7 +177,7 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
         WeatherSummary summary = null;
         CulturalConstraints constraints = null;
         AiOutfit aiOutfit = null;
-        List<String> notes = null;
+        List<String> safetyNotes = null;
 
         // 추천 상태가 완료된 경우에만 파싱 로직 수행
         if (outfit.getStatus() == RecommendationStatus.COMPLETED) {
@@ -206,7 +206,7 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
                             AiOutfit.class);
                 }
                 if (outfit.getSafetyNotesJson() != null) {
-                    notes = objectMapper.treeToValue(outfit.getSafetyNotesJson(), listTypeRef);
+                    safetyNotes = objectMapper.treeToValue(outfit.getSafetyNotesJson(), listTypeRef);
                 }
             } catch (JsonProcessingException e) {
                 // 파싱 실패 시, 서비스 레이어에서 예외 처리
@@ -215,7 +215,7 @@ public class TravelOutfitServiceImpl implements TravelOutfitService {
             }
         }
 
-        return TravelOutfitResponse.from(outfit, summary, constraints, aiOutfit, notes);
+        return TravelOutfitResponse.from(outfit, summary, constraints, aiOutfit, safetyNotes);
     }
 
     // 성별을 한국어 문자열로 변환
