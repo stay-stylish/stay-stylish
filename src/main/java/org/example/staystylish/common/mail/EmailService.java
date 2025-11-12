@@ -30,7 +30,7 @@ public class EmailService {
     public void sendVerificationEmail(String to, String token, String baseUrl) {
         MDC.put("email", to);
         try {
-            String verifyLink = baseUrl + "/api/v1/auth/verify?token=" + token;
+            String verifyLink = baseUrl + "/auth/verify?token=" + token;
             Context context = new Context();
             context.setVariable("verifyLink", verifyLink);
             String html = templateEngine.process("mail/verify", context);

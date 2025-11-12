@@ -3,6 +3,10 @@ package org.example.staystylish.domain.user.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.staystylish.common.constants.RedisKeyConstants;
@@ -21,17 +25,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final Duration LOCK_TIMEOUT = Duration.ofSeconds(5);
+    // TypeReference 상수화
+    private static final TypeReference<Map<String, String>> TOKEN_DATA_TYPE =
+            new TypeReference<>() {
+            };
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
@@ -40,14 +44,8 @@ public class AuthService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
-    private static final Duration LOCK_TIMEOUT = Duration.ofSeconds(5);
-
-    // TypeReference 상수화
-    private static final TypeReference<Map<String, String>> TOKEN_DATA_TYPE =
-            new TypeReference<>() {};
-
     @Transactional
-    public UserResponse signup(SignupRequest request, String baseUrl) {
+    public UserResponse signup(SignupRequest request) {
         String email = request.email();
         String lockKey = RedisKeyConstants.signupLockKey(email);
 
@@ -96,7 +94,7 @@ public class AuthService {
                     log.info("탈퇴한 계정 복구 완료: {}", email);
 
                     // 인증 메일 발송
-                    emailVerificationService.issueTokenAndSendMail(user, baseUrl);
+                    emailVerificationService.issueTokenAndSendMail(user);
 
                     return UserResponse.from(user);
                 } else {
@@ -120,7 +118,7 @@ public class AuthService {
             userRepository.save(user);
 
             // ⑤ 인증 메일 발송
-            emailVerificationService.issueTokenAndSendMail(user, baseUrl);
+            emailVerificationService.issueTokenAndSendMail(user);
             log.info("신규 회원가입 완료 및 인증 메일 발송: {}", user.getEmail());
 
             return UserResponse.from(user);
@@ -137,13 +135,17 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new GlobalException(UserErrorCode.USER_NOT_FOUND));
 
-        if (user.isDeleted()) throw new GlobalException(UserErrorCode.USER_DELETED);
+        if (user.isDeleted()) {
+            throw new GlobalException(UserErrorCode.USER_DELETED);
+        }
 
-        if (!user.isEmailVerified())
+        if (!user.isEmailVerified()) {
             throw new GlobalException(UserErrorCode.EMAIL_NOT_VERIFIED);
+        }
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword()))
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new GlobalException(UserErrorCode.INVALID_PASSWORD);
+        }
 
         // Access + Refresh 발급
         String accessToken = jwtProvider.generateAccessToken(user.getEmail());
