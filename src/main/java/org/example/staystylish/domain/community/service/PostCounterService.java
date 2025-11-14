@@ -41,7 +41,28 @@ public class PostCounterService {
     }
 
     public int getLikeCount(Long postId) {
-        return getCount(postId, LIKE_KEY, Post::getLikeCount, "좋아요");
+        String countStr = redis.opsForValue().get(LIKE_KEY + postId);
+        log.info("Redis 조회 - postId: {}, key: {}, value: {}", postId, LIKE_KEY + postId, countStr);
+
+        if (countStr == null) {
+            // Redis에 값이 없으면 DB에서 조회해서 Redis에 설정
+            return postRepository.findById(postId)
+                    .map(post -> {
+                        int dbCount = post.getLikeCount();
+                        redis.opsForValue().set(LIKE_KEY + postId, String.valueOf(dbCount));
+                        log.info("Redis에 값 없음 - DB에서 조회 후 설정: postId={}, count={}", postId, dbCount);
+                        return dbCount;
+                    })
+                    .orElse(0);
+        }
+        try {
+            int count = Integer.parseInt(countStr);
+            log.info("Redis 값 파싱 성공 - postId: {}, count: {}", postId, count);
+            return count;
+        } catch (NumberFormatException e) {
+            log.warn("[PostCounter] 좋아요 카운트 파싱 실패 postId={}", postId, e);
+            return 0;
+        }
     }
 
     public int getShareCount(Long postId) {
