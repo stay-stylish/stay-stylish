@@ -37,9 +37,7 @@ public class ShareService {
 
         postCounterService.incrShare(post.getId());
 
-        int currentShareCount = postCounterService.getShareCount(post.getId());
-
-        return ShareResponse.of(post.getId(), platform.toUpperCase(), post.getShareCount());
+        return ShareResponse.of(post.getId(), platform.toUpperCase(), postCounterService.getShareCount(post.getId()));
     }
 }
 

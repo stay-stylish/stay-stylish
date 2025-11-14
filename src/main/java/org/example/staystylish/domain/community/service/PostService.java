@@ -61,16 +61,11 @@ public class PostService {
     // 게시글 전체 조회
     @Transactional(readOnly = true)
     public Page<PostResponse> getAllPosts(Pageable pageable, String sortBy) {
-        log.info("===== getAllPosts 시작 - sortBy: {}, page: {}, size: {} =====",
-                sortBy, pageable.getPageNumber(), pageable.getPageSize());
-
         if ("like".equalsIgnoreCase(sortBy)) {
             List<Long> sortedPostIds = postCounterService.getPostIdsSortedByLike(
                     pageable.getPageNumber(),
                     pageable.getPageSize()
             );
-
-            log.info("Redis Sorted Set에서 가져온 게시글 ID: {}", sortedPostIds);
 
             if (sortedPostIds.isEmpty()) {
                 return Page.empty(pageable);
@@ -86,37 +81,28 @@ public class PostService {
                     .filter(Objects::nonNull)
                     .toList();
 
-            log.info("정렬된 게시글 수: {}", orderedPosts.size());
-
             List<PostResponse> responses = orderedPosts.stream()
                     .map(post -> {
                         int likeCount = postCounterService.getLikeCount(post.getId());
                         int shareCount = postCounterService.getShareCount(post.getId());
-                        log.info("Post ID: {}, Redis likeCount: {}, shareCount: {}",
-                                post.getId(), likeCount, shareCount);
+
                         return PostResponse.from(post, likeCount, shareCount);
                     })
                     .toList();
 
             long totalElements = postCounterService.getTotalPostCount();
 
-            log.info("===== getAllPosts 완료 (좋아요순) - 반환 게시글 수: {} =====", responses.size());
-
             return new PageImpl<>(responses, pageable, totalElements);
 
         } else {
             Page<Post> posts = postRepository.findAllOrderByLatest(pageable);
-            log.info("DB에서 가져온 게시글 수 (최신순): {}", posts.getContent().size());
 
             Page<PostResponse> result = posts.map(post -> {
                 int likeCount = postCounterService.getLikeCount(post.getId());
                 int shareCount = postCounterService.getShareCount(post.getId());
-                log.info("Post ID: {}, Redis likeCount: {}, shareCount: {}",
-                        post.getId(), likeCount, shareCount);
+
                 return PostResponse.from(post, likeCount, shareCount);
             });
-
-            log.info("===== getAllPosts 완료 (최신순) - 반환 게시글 수: {} =====", result.getContent().size());
 
             return result;
         }
