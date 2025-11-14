@@ -10,14 +10,17 @@ import org.example.staystylish.domain.community.entity.Post;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.user.entity.User;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +40,11 @@ public class PostService {
                 .content(request.content())
                 .build();
 
-        return PostResponse.from(postRepository.save(post));
+        Post savedPost = postRepository.save(post);
+
+        postCounterService.initializeCounts(savedPost.getId(), 0, 0);
+
+        return PostResponse.from(savedPost, 0, 0);
     }
 
     // 게시글 단건 조회
@@ -45,15 +52,10 @@ public class PostService {
     public PostResponse getPost(Long postId) {
         Post post = findPostById(postId);
 
-        // Redis에서 실시간 카운트 가져오기
         int likeCount = postCounterService.getLikeCount(postId);
         int shareCount = postCounterService.getShareCount(postId);
 
-        // 임시로 설정 (DB 업데이트 없이)
-        post.setLikeCount(likeCount);
-        post.setShareCount(shareCount);
-
-        return PostResponse.from(post);
+        return PostResponse.from(post, likeCount, shareCount);
     }
 
     // 게시글 전체 조회
@@ -62,62 +64,62 @@ public class PostService {
         log.info("===== getAllPosts 시작 - sortBy: {}, page: {}, size: {} =====",
                 sortBy, pageable.getPageNumber(), pageable.getPageSize());
 
-        // 1. 모든 게시글 가져오기 (정렬 없이)
-        Page<Post> posts = postRepository.findAllOrderByLatest(pageable);
-        log.info("DB에서 가져온 게시글 수: {}", posts.getContent().size());
-
-        // 2. Redis 카운트를 각 게시글에 적용
-        List<Post> postList = posts.getContent();
-        for (Post post : postList) {
-            int dbLikeCount = post.getLikeCount();
-            int redisLikeCount = postCounterService.getLikeCount(post.getId());
-            int shareCount = postCounterService.getShareCount(post.getId());
-
-            log.info("Post ID: {}, DB likeCount: {}, Redis likeCount: {}",
-                    post.getId(), dbLikeCount, redisLikeCount);
-
-            post.setLikeCount(redisLikeCount);
-            post.setShareCount(shareCount);
-        }
-
-        // 3. 좋아요순 정렬이 요청된 경우 메모리에서 정렬
         if ("like".equalsIgnoreCase(sortBy)) {
-            log.info("좋아요순 정렬 시작");
+            List<Long> sortedPostIds = postCounterService.getPostIdsSortedByLike(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize()
+            );
 
-            // 정렬 전 상태 로깅
-            for (int i = 0; i < postList.size(); i++) {
-                Post p = postList.get(i);
-                log.info("정렬 전 [{}] - Post ID: {}, likeCount: {}", i, p.getId(), p.getLikeCount());
+            log.info("Redis Sorted Set에서 가져온 게시글 ID: {}", sortedPostIds);
+
+            if (sortedPostIds.isEmpty()) {
+                return Page.empty(pageable);
             }
 
-            postList.sort((p1, p2) -> {
-                int compare = Integer.compare(p2.getLikeCount(), p1.getLikeCount());
-                if (compare == 0) {
-                    return p2.getCreatedAt().compareTo(p1.getCreatedAt());
-                }
-                return compare;
+            List<Post> posts = postRepository.findAllById(sortedPostIds);
+
+            Map<Long, Post> postMap = posts.stream()
+                    .collect(Collectors.toMap(Post::getId, post -> post));
+
+            List<Post> orderedPosts = sortedPostIds.stream()
+                    .map(postMap::get)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            log.info("정렬된 게시글 수: {}", orderedPosts.size());
+
+            List<PostResponse> responses = orderedPosts.stream()
+                    .map(post -> {
+                        int likeCount = postCounterService.getLikeCount(post.getId());
+                        int shareCount = postCounterService.getShareCount(post.getId());
+                        log.info("Post ID: {}, Redis likeCount: {}, shareCount: {}",
+                                post.getId(), likeCount, shareCount);
+                        return PostResponse.from(post, likeCount, shareCount);
+                    })
+                    .toList();
+
+            long totalElements = postCounterService.getTotalPostCount();
+
+            log.info("===== getAllPosts 완료 (좋아요순) - 반환 게시글 수: {} =====", responses.size());
+
+            return new PageImpl<>(responses, pageable, totalElements);
+
+        } else {
+            Page<Post> posts = postRepository.findAllOrderByLatest(pageable);
+            log.info("DB에서 가져온 게시글 수 (최신순): {}", posts.getContent().size());
+
+            Page<PostResponse> result = posts.map(post -> {
+                int likeCount = postCounterService.getLikeCount(post.getId());
+                int shareCount = postCounterService.getShareCount(post.getId());
+                log.info("Post ID: {}, Redis likeCount: {}, shareCount: {}",
+                        post.getId(), likeCount, shareCount);
+                return PostResponse.from(post, likeCount, shareCount);
             });
 
-            // 정렬 후 상태 로깅
-            for (int i = 0; i < postList.size(); i++) {
-                Post p = postList.get(i);
-                log.info("정렬 후 [{}] - Post ID: {}, likeCount: {}", i, p.getId(), p.getLikeCount());
-            }
+            log.info("===== getAllPosts 완료 (최신순) - 반환 게시글 수: {} =====", result.getContent().size());
+
+            return result;
         }
-
-        // 4. PostResponse로 변환
-        List<PostResponse> responseList = postList.stream()
-                .map(PostResponse::from)
-                .toList();
-
-        log.info("===== getAllPosts 완료 - 반환 게시글 수: {} =====", responseList.size());
-
-        // 5. Page 객체로 반환
-        return new org.springframework.data.domain.PageImpl<>(
-                responseList,
-                pageable,
-                posts.getTotalElements()
-        );
     }
 
     // 게시글 수정
@@ -131,7 +133,11 @@ public class PostService {
         validatePostOwner(user, post);
 
         post.update(request.title(), request.content());
-        return PostResponse.from(post);
+
+        int likeCount = postCounterService.getLikeCount(postId);
+        int shareCount = postCounterService.getShareCount(postId);
+
+        return PostResponse.from(post, likeCount, shareCount);
     }
 
     // 게시글 삭제
@@ -159,5 +165,3 @@ public class PostService {
         }
     }
 }
-
-

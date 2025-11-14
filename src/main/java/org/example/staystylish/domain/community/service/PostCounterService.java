@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -21,6 +22,7 @@ public class PostCounterService {
 
     private static final String LIKE_KEY = "post:like:";
     private static final String SHARE_KEY = "post:share:";
+    private static final String LIKE_SORTED_SET = "post:like:sorted";
 
     private static final String UPDATED_LIKE_SET = "post:update:like";
     private static final String UPDATED_SHARE_SET = "post:update:share";
@@ -28,11 +30,23 @@ public class PostCounterService {
     public void incrLike(Long postId) {
         redis.opsForValue().increment(LIKE_KEY + postId);
         redis.opsForSet().add(UPDATED_LIKE_SET, String.valueOf(postId));
+
+        // Sorted Set에도 업데이트
+        String countStr = redis.opsForValue().get(LIKE_KEY + postId);
+        if (countStr != null) {
+            redis.opsForZSet().add(LIKE_SORTED_SET, String.valueOf(postId), Double.parseDouble(countStr));
+        }
     }
 
     public void decrLike(Long postId) {
         redis.opsForValue().decrement(LIKE_KEY + postId);
         redis.opsForSet().add(UPDATED_LIKE_SET, String.valueOf(postId));
+
+        // Sorted Set에도 업데이트
+        String countStr = redis.opsForValue().get(LIKE_KEY + postId);
+        if (countStr != null) {
+            redis.opsForZSet().add(LIKE_SORTED_SET, String.valueOf(postId), Double.parseDouble(countStr));
+        }
     }
 
     public void incrShare(Long postId) {
@@ -40,25 +54,27 @@ public class PostCounterService {
         redis.opsForSet().add(UPDATED_SHARE_SET, String.valueOf(postId));
     }
 
+    // 게시글 생성 시 Sorted Set 초기화
+    public void initializeCounts(Long postId, int likeCount, int shareCount) {
+        redis.opsForValue().set(LIKE_KEY + postId, String.valueOf(likeCount));
+        redis.opsForValue().set(SHARE_KEY + postId, String.valueOf(shareCount));
+        redis.opsForZSet().add(LIKE_SORTED_SET, String.valueOf(postId), (double) likeCount);
+    }
+
     public int getLikeCount(Long postId) {
         String countStr = redis.opsForValue().get(LIKE_KEY + postId);
-        log.info("Redis 조회 - postId: {}, key: {}, value: {}", postId, LIKE_KEY + postId, countStr);
-
         if (countStr == null) {
-            // Redis에 값이 없으면 DB에서 조회해서 Redis에 설정
-            return postRepository.findById(postId)
-                    .map(post -> {
-                        int dbCount = post.getLikeCount();
-                        redis.opsForValue().set(LIKE_KEY + postId, String.valueOf(dbCount));
-                        log.info("Redis에 값 없음 - DB에서 조회 후 설정: postId={}, count={}", postId, dbCount);
-                        return dbCount;
-                    })
-                    .orElse(0);
+            Post post = postRepository.findById(postId).orElse(null);
+            if (post != null) {
+                int dbCount = post.getLikeCount();
+                redis.opsForValue().set(LIKE_KEY + postId, String.valueOf(dbCount));
+                redis.opsForZSet().add(LIKE_SORTED_SET, String.valueOf(postId), (double) dbCount);
+                return dbCount;
+            }
+            return 0;
         }
         try {
-            int count = Integer.parseInt(countStr);
-            log.info("Redis 값 파싱 성공 - postId: {}, count: {}", postId, count);
-            return count;
+            return Integer.parseInt(countStr);
         } catch (NumberFormatException e) {
             log.warn("[PostCounter] 좋아요 카운트 파싱 실패 postId={}", postId, e);
             return 0;
@@ -66,36 +82,53 @@ public class PostCounterService {
     }
 
     public int getShareCount(Long postId) {
-        return getCount(postId, SHARE_KEY, Post::getShareCount, "공유");
-    }
-
-    private int getCount(Long postId, String keyPrefix, java.util.function.Function<Post, Integer> dbCountExtractor, String metricName) {
-        String countStr = redis.opsForValue().get(keyPrefix + postId);
+        String countStr = redis.opsForValue().get(SHARE_KEY + postId);
         if (countStr == null) {
-            // Redis에 값이 없으면 DB에서 조회해서 Redis에 설정
-            return postRepository.findById(postId)
-                    .map(post -> {
-                        int dbCount = dbCountExtractor.apply(post);
-                        redis.opsForValue().set(keyPrefix + postId, String.valueOf(dbCount));
-                        return dbCount;
-                    })
-                    .orElse(0);
+            Post post = postRepository.findById(postId).orElse(null);
+            if (post != null) {
+                int dbCount = post.getShareCount();
+                redis.opsForValue().set(SHARE_KEY + postId, String.valueOf(dbCount));
+                return dbCount;
+            }
+            return 0;
         }
         try {
             return Integer.parseInt(countStr);
         } catch (NumberFormatException e) {
-            log.warn("[PostCounter] {} 카운트 파싱 실패 postId={}", metricName, postId, e);
+            log.warn("[PostCounter] 공유 카운트 파싱 실패 postId={}", postId, e);
             return 0;
         }
     }
 
+    // 좋아요순으로 정렬된 게시글 ID 목록 가져오기
+    public List<Long> getPostIdsSortedByLike(int page, int size) {
+        int start = page * size;
+        int end = start + size - 1;
+
+        // ZREVRANGE: 높은 점수부터 (좋아요 많은 순)
+        Set<String> postIdStrs = redis.opsForZSet().reverseRange(LIKE_SORTED_SET, start, end);
+
+        if (postIdStrs == null || postIdStrs.isEmpty()) {
+            return List.of();
+        }
+
+        return postIdStrs.stream()
+                .map(Long::parseLong)
+                .toList();
+    }
+
+    // 전체 게시글 수 (Sorted Set 크기)
+    public long getTotalPostCount() {
+        Long size = redis.opsForZSet().size(LIKE_SORTED_SET);
+        return size != null ? size : 0;
+    }
+
     @Transactional
-    @Scheduled(fixedRate = 300000) // 300,000ms = 5분
+    @Scheduled(fixedRate = 300000) // 5분
     public void syncToDB() {
         syncMetric(UPDATED_LIKE_SET, LIKE_KEY, true);
         syncMetric(UPDATED_SHARE_SET, SHARE_KEY, false);
 
-        // flush는 한 번만 호출 (트랜잭션 단위로 일괄 반영)
         postRepository.flush();
         log.info("[PostCounter Sync] 동기화 완료 (LIKE + SHARE)");
     }
@@ -109,14 +142,19 @@ public class PostCounterService {
 
         for (String id : postIds) {
             try {
-                Long postId = Long.parseLong(id); // 문자열 → Long 변환
+                Long postId = Long.parseLong(id);
                 String countStr = redis.opsForValue().get(counterPrefix + postId);
                 if (countStr == null) continue;
 
                 int count = Integer.parseInt(countStr);
                 postRepository.findById(postId).ifPresent(post -> {
-                    if (like) post.setLikeCount(count);
-                    else post.setShareCount(count);
+                    if (like) {
+                        post.setLikeCount(count);
+                        // Sorted Set도 동기화
+                        redis.opsForZSet().add(LIKE_SORTED_SET, String.valueOf(postId), (double) count);
+                    } else {
+                        post.setShareCount(count);
+                    }
                 });
 
             } catch (NumberFormatException e) {
