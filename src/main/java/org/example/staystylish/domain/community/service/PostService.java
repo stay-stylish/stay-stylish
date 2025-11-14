@@ -1,6 +1,7 @@
 package org.example.staystylish.domain.community.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.domain.community.code.CommunityErrorCode;
 import org.example.staystylish.domain.community.dto.request.PostRequest;
@@ -9,14 +10,21 @@ import org.example.staystylish.domain.community.entity.Post;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.user.entity.User;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostService {
 
     private final PostRepository postRepository;
@@ -32,30 +40,72 @@ public class PostService {
                 .content(request.content())
                 .build();
 
-        return PostResponse.from(postRepository.save(post));
+        Post savedPost = postRepository.save(post);
+
+        postCounterService.initializeCounts(savedPost.getId(), 0, 0);
+
+        return PostResponse.from(savedPost, 0, 0);
     }
 
     // 게시글 단건 조회
     @Transactional(readOnly = true)
-    @Cacheable(value = "postDetail", key = "#postId", unless = "#result == null")
     public PostResponse getPost(Long postId) {
-        return PostResponse.from(findPostById(postId));
+        Post post = findPostById(postId);
+
+        int likeCount = postCounterService.getLikeCount(postId);
+        int shareCount = postCounterService.getShareCount(postId);
+
+        return PostResponse.from(post, likeCount, shareCount);
     }
 
     // 게시글 전체 조회
     @Transactional(readOnly = true)
-    @Cacheable(value = "postList", key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #sortBy", unless = "#result == null")
-    public Page<PostResponse> getAllPosts(org.springframework.data.domain.Pageable pageable, String sortBy) {
-        Page<Post> posts;
-
+    public Page<PostResponse> getAllPosts(Pageable pageable, String sortBy) {
         if ("like".equalsIgnoreCase(sortBy)) {
-            posts = postRepository.findAllOrderByLike(pageable);
-        } else {
-            // 기본값: 최신순
-            posts = postRepository.findAllOrderByLatest(pageable);
-        }
+            List<Long> sortedPostIds = postCounterService.getPostIdsSortedByLike(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize()
+            );
 
-        return posts.map(PostResponse::from);
+            if (sortedPostIds.isEmpty()) {
+                return Page.empty(pageable);
+            }
+
+            List<Post> posts = postRepository.findAllById(sortedPostIds);
+
+            Map<Long, Post> postMap = posts.stream()
+                    .collect(Collectors.toMap(Post::getId, post -> post));
+
+            List<Post> orderedPosts = sortedPostIds.stream()
+                    .map(postMap::get)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            List<PostResponse> responses = orderedPosts.stream()
+                    .map(post -> {
+                        int likeCount = postCounterService.getLikeCount(post.getId());
+                        int shareCount = postCounterService.getShareCount(post.getId());
+
+                        return PostResponse.from(post, likeCount, shareCount);
+                    })
+                    .toList();
+
+            long totalElements = postCounterService.getTotalPostCount();
+
+            return new PageImpl<>(responses, pageable, totalElements);
+
+        } else {
+            Page<Post> posts = postRepository.findAllOrderByLatest(pageable);
+
+            Page<PostResponse> result = posts.map(post -> {
+                int likeCount = postCounterService.getLikeCount(post.getId());
+                int shareCount = postCounterService.getShareCount(post.getId());
+
+                return PostResponse.from(post, likeCount, shareCount);
+            });
+
+            return result;
+        }
     }
 
     // 게시글 수정
@@ -69,7 +119,11 @@ public class PostService {
         validatePostOwner(user, post);
 
         post.update(request.title(), request.content());
-        return PostResponse.from(post);
+
+        int likeCount = postCounterService.getLikeCount(postId);
+        int shareCount = postCounterService.getShareCount(postId);
+
+        return PostResponse.from(post, likeCount, shareCount);
     }
 
     // 게시글 삭제
@@ -97,5 +151,3 @@ public class PostService {
         }
     }
 }
-
-

@@ -26,4 +26,17 @@ public record PostResponse(
                 post.getUpdatedAt()
         );
     }
+
+    public static PostResponse from(Post post, int likeCount, int shareCount) {
+        return new PostResponse(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getAuthor().getNickname(),
+                likeCount,      // Redis에서 가져온 값
+                shareCount,     // Redis에서 가져온 값
+                post.getCreatedAt(),
+                post.getUpdatedAt()
+        );
+    }
 }
