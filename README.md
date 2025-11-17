@@ -869,8 +869,6 @@ public RedisConnectionFactory redisConnectionFactory() {
 <details>
 <summary><strong>[Redis / WebClient JSON → DTO 변환 문제]</strong></summary>
 <br>
-[Redis / WebClient JSON → DTO 변환 문제]
-
 ```jsx
 java.lang.ClassCastException
 :
