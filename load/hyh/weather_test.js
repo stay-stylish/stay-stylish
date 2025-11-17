@@ -4,8 +4,8 @@ import { Trend, Counter } from 'k6/metrics';
 
 // === 커스터마이징 섹션 ===
 // 목표(테스트 대상) URL: 예) http://localhost:8080
-const BASELINE_URL = __ENV.BASELINE_URL || 'http://localhost:8080';
-const OPTIMIZED_URL = __ENV.OPTIMIZED_URL || 'http://localhost:8081';
+const BASELINE_URL = __ENV.BASELINE_URL ||  'http://host.docker.internal:8080';
+const OPTIMIZED_URL = __ENV.OPTIMIZED_URL ||  'http://host.docker.internal:8080';
 
 // 요청 바디 (위도/경도)
 const PAYLOAD = JSON.stringify({ latitude: 37.56, longitude: 126.97 });
