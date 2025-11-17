@@ -63,7 +63,9 @@
 
 <br>
 
-## 🏗️ 프로젝트 설계
+## 🏗️ 아키텍처
+
+![image.png](src/main/resources/image.png)
 
 * **CI/CD & Monitoring:**
     * **GitHub Actions:** `dev` 브랜치 Push 시 자동 Docker 이미지 빌드/Push 및 AWS SSM을 통한 ECS 배포.
