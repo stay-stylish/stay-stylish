@@ -16,11 +16,11 @@ spring:
     redis:
       host: localhost
       port: 6379
-      password:
+      password: ${REDIS_PASSWORD}
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
 
   mail:
     username: ${EMAIL_USERNAME}      # 로컬 .env 파일에 Gmail 주소
