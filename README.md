@@ -65,7 +65,7 @@
 
 ## 🏗️ 아키텍처
 
-![image.png](src/main/resources/image.png)
+![image.png](src/main/resources/image/image.png)
 
 * **CI/CD & Monitoring:**
     * **GitHub Actions:** `dev` 브랜치 Push 시 자동 Docker 이미지 빌드/Push 및 AWS SSM을 통한 ECS 배포.
@@ -83,7 +83,7 @@
 
 * **API 명세서:** [Swagger 링크](https://api.staystylish.store/swagger-ui/index.html) (
   OpenAPI 3.0)
-* **DB 스키마 (ERD):** ![OOTD.png](src/main/resources/OOTD.png)
+* **DB 스키마 (ERD):** ![OOTD.png](src/main/resources/image/OOTD.png)
     * (Flyway 마이그레이션 스크립트: `V1__init_schema.sql`, `V2__add_performance_indexes.sql`)
 * **GitHub 프로젝트 관리:**
     * [Issue 템플릿 (기능)]([feat-템플릿.md](.github/ISSUE_TEMPLATE/feat-%ED%85%9C%ED%94%8C%EB%A6%BF.md))
@@ -906,8 +906,6 @@ org.example.staystylish.domain.localweather.service.WeatherServiceImpl.getWeathe
 
 100번째 줄에서 `LinkedHashMap`을 `WeatherResponse`로 캐스팅하고 있음.
 
-![image.png](attachment:c7c48349-7a16-4600-9303-7e6877ab9d09:image.png)
-
 ## ✅ 문제 상황
 
 ```java
@@ -1256,7 +1254,7 @@ K6를 사용한 1차 부하 테스트(VUs: 10) 결과, 이 구조는 심각한 �
     * **요청 실패율:** **12.50%**
     * **RPS (초당 요청 수):** 약 0.52/s
 
-![1차 K6 테스트 결과]![img.png](src/main/resources/img.png)
+![img.png](src/main/resources/image/img.png)
 
 10명의 동시 사용자만으로도 서버 스레드가 모두 외부 API 응답을 기다리며 **대기(Blocking) 상태**에 빠졌습니다. 이로 인해 P95 응답 시간이 20초에 육박하고, 요청의 12.5%가 타임아웃으로
 실패했습니다. 이 구조로는 실제 트래픽을 감당할 수 없다고 판단했습니다.
@@ -1315,8 +1313,9 @@ K6를 사용한 1차 부하 테스트(VUs: 10) 결과, 이 구조는 심각한 �
 * **명확한 병목 식별:** Grafana 대시보드 분석 결과, DB 커넥션 풀과 JVM 메모리는 매우 안정적이었습니다. 2차 테스트의 `recommendation_duration` (P95 약 50초)을 통해,
   **서버의 병목이 아닌 외부 OpenAI API의 응답 속도**가 전체 E2E 시간의 병목임을 명확히 식별할 수 있었습니다.
 
-![Grafana 대시보드 - 2차 테스트]![대시보드1.JPG.jpg](src/main/resources/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C1.JPG.jpg)![대시보드3.JPG.jpg](src/main/resources/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C3.JPG.jpg)
-![대시보드5.JPG.jpg](src/main/resources/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C5.JPG.jpg)*(2차 테스트 당시 Grafana 대시보드. HTTP 응답(녹색)은
+![Grafana 대시보드 - 2차 테스트]*![대시보드1.JPG.jpg](src/main/resources/image/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C1.JPG.jpg)
+![대시보드3.JPG.jpg](src/main/resources/image/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C3.JPG.jpg)![대시보드5.JPG.jpg](src/main/resources/image/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C5.JPG.jpg)(
+2차 테스트 당시 Grafana 대시보드. HTTP 응답(녹색)은
 빠르고, E2E 시간(노란색)은 길며, DB(파란색)는 부하가 없는 것을 확인)*
 
 </details>
