@@ -2,6 +2,7 @@ package org.example.staystylish.domain.localweather.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.jetbrains.annotations.TestOnly;
 
 @Entity
 @Table(name = "region_grid")
@@ -26,4 +27,10 @@ public class Region {
 
     private Double longitude;
     private Double latitude;
+
+    // 테스트 전용 생성자
+    @TestOnly
+    protected Region(Long id) {
+        this.id = id;
+    }
 }

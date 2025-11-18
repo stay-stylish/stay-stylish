@@ -80,6 +80,10 @@ management:
     health:
       show-details: always
 metrics:
+  distribution:
+    percentiles-histogram:
+      weather_api_duration_seconds: true
+      weather_service_duration_seconds: true
   tags:
     application: ${spring.application.name}
 
