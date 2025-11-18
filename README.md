@@ -65,7 +65,13 @@
 
 ## 🏗️ 아키텍처
 
-![image.png](src/main/resources/image.png)
+### V0 ( 개발 )
+
+![아키텍처 (개발).png](src/main/resources/image/%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98%20%28%EA%B0%9C%EB%B0%9C%29.png)
+
+### V1 ( 배포 )
+
+![아키텍처 (배포).png](src/main/resources/image/%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98%20%28%EB%B0%B0%ED%8F%AC%29.png)
 
 * **CI/CD & Monitoring:**
     * **GitHub Actions:** `dev` 브랜치 Push 시 자동 Docker 이미지 빌드/Push 및 AWS SSM을 통한 ECS 배포.
@@ -83,7 +89,7 @@
 
 * **API 명세서:** [Swagger 링크](https://api.staystylish.store/swagger-ui/index.html) (
   OpenAPI 3.0)
-* **DB 스키마 (ERD):** ![OOTD.png](src/main/resources/OOTD.png)
+* **DB 스키마 (ERD):** ![OOTD.png](src/main/resources/image/OOTD.png)
     * (Flyway 마이그레이션 스크립트: `V1__init_schema.sql`, `V2__add_performance_indexes.sql`)
 * **GitHub 프로젝트 관리:**
     * [Issue 템플릿 (기능)]([feat-템플릿.md](.github/ISSUE_TEMPLATE/feat-%ED%85%9C%ED%94%8C%EB%A6%BF.md))
@@ -871,6 +877,7 @@ public RedisConnectionFactory redisConnectionFactory() {
 <details>
 <summary><strong>[Redis / WebClient JSON → DTO 변환 문제]</strong></summary>
 <br>
+
 ```jsx
 java.lang.ClassCastException
 :
@@ -893,9 +900,7 @@ example.staystylish.domain.localweather.dto.WeatherResponse
 
 코드에서 `LinkedHashMap` 객체를 `WeatherResponse`로 직접 변환하려고 해서 발생한 오류
 
-. Spring에서 `RestTemplate`이나 `WebClient`로 외부 API를 호출할 때 JSON을 `Map`으로 반환하면 생긴다고함
-
-차근차근 뜯어보면
+. Spring에서 `RestTemplate`이나 `WebClient`로 외부 API를 호출할 때 JSON을 `Map`으로 반환하면 생긴다고 함.
 
 ```jsx
 org.example.staystylish.domain.localweather.service.WeatherServiceImpl.getWeatherByLatLon(WeatherServiceImpl.java
@@ -906,8 +911,6 @@ org.example.staystylish.domain.localweather.service.WeatherServiceImpl.getWeathe
 ```
 
 100번째 줄에서 `LinkedHashMap`을 `WeatherResponse`로 캐스팅하고 있음.
-
-![image.png](attachment:c7c48349-7a16-4600-9303-7e6877ab9d09:image.png)
 
 ## ✅ 문제 상황
 
@@ -1084,103 +1087,6 @@ public interface RegionRepository extends JpaRepository<Region, Long> {
 </details>
 
 <details>
-<summary><strong>[Spring AI 모델 충돌 문제]</strong></summary>
-<br>
-
-## 개요
-
-- `Spring Ai` 환경에서 `Gemini` 모델을 기본으로 사용하고 `OpenAi` 를 TravelOutfit 도메인에서 사용하려고 할 때  `ChatModel` 문제가 발생
-- `openAiChatModel`과 `vertexAiGeminiChat` 두 개의 `ChatModel` 빈이 감지되어 Spring AI 자동 설정이 기본 빈을 선택하지 못하고 충돌.
-
-## 원인 분석
-
-- `spring-ai-openai-starter`와 `spring-ai-vertex-ai-gemini-starter` 의존성이 모두 활성화되어 `ChatModel` 타입의 빈이 2개(
-  `openAiChatModel`, `vertexAiGeminiChat`) 생성
-
-⇒ Spring의 의존성 주입 컨테이너가 어느 빈을 사용해야될지 몰라서 예외가 발생하여
-어플리케이션 오류 발생
-
-```json
-No qualifying bean of type 'org.springframework.ai.chat.model.ChatModel' available:
-expected single matching bean but found 2: openAiChatModel, vertexAiGeminiChat
-```
-
-## 해결 목표
-
-기본 모델을 설정해두고 특정 도메인에 사용하는 모델을 용도에 맞게 분리
-
-- **기본 모델 (Gemini):** `ProductClassificationService`, `OutfitService` 등의 따로 명시적으로 주입 하지 않은 서비스에서는 `@Primary`로 지정된
-  Gemini를 기본으로 사용
-- **특정 도메인 모델 (OpenAI):** `traveloutfit` 도메인에서 특정 **OpenAI** 모델을 사용
-  (추후 다른 도메인에서 명시적으로 주입만 해주면 사용 가능)
-
-## 해결 방안
-
-- `AiClientsConfig` 파일을 생성하여 `chatModel` 을 만들고 primary 지정
-    1. `ChatModel` 기본 빈 `@Primary` 로 지정
-
-    - 충돌 문제를 해결하기 위해 `ChatModel` 빈 중 하나를 기본값으로 지정
-    - `vertextAiGeminiChat` 을 `@Primary` 로 선언하여 스프링 컨테이너가
-      `Gemini` 를 기본 모델로 사용하도록 설정
-
-      ```java
-      @Bean
-          @Primary
-          public ChatModel primaryChatModel(@Qualifier("vertexAiGeminiChat") ChatModel gemini) {
-              return gemini;
-          }
-      ```
-
-    2. `ChatClient` 빈 등록
-
-    - 서비스에서는 `ChatModel` 대신 `ChatClient`를 사용하므로, 각 모델에 대한 `ChatClient` 빈을 각각 등록
-
-      ```java
-          // 기본 ChatClient (Gemini)
-          @Bean(name = "chatClientGemini")
-          @Primary
-          public ChatClient chatClientGemini(@Qualifier("vertexAiGeminiChat") ChatModel geminiModel) {
-              return ChatClient.builder(geminiModel).build();
-          }
-      
-          // traveloutfit 도메인 chatClient (OpenAI)
-          @Bean(name = "chatClientOpenAi")
-          public ChatClient chatClientOpenAi(@Qualifier("openAiChatModel") ChatModel openAiModel) {
-              return ChatClient.builder(openAiModel).build();
-          }
-      
-      ```
-
-    3. `traveloutfit` 도메인에서 `@Qualifier` 로 명시적 주입
-
-    - OpenAI를 사용하는 `TravelAiClient` 에서 `@Qualifier` 를 사용하여 빈을 명시적으로 주입 받도록 수정
-
-      ```java
-          private final ChatClient chatClient;
-          private final ObjectMapper objectMapper;
-      
-          // 생성자 주입
-          public TravelAiClient(
-                  @Qualifier("chatClientOpenAi") ChatClient chatClient,
-                  ObjectMapper objectMapper
-          ) {
-              this.chatClient = chatClient;
-              this.objectMapper = objectMapper;
-          }
-      ㅇㅇ
-      
-      ```
-
-## 최종 결과
-
-- `ProductClassificationService` 및 `OutfitService`
-    - `@Primary`로 지정된 `Gemini` `ChatModel`을 자동으로 사용하여 `ChatClient`를 생성
-- `TravelAiClient`
-    - 생성자에서 `@Qualifier("chatClientOpenAi")`를 통해 `OpenAI` ****`ChatClient` 빈을 명시적으로 주입
-
-</details>
-
-<details>
 <summary><strong>[XML 파싱 및 단일/다수 item 처리 이슈]</strong></summary>
 <br>
 
@@ -1220,14 +1126,23 @@ xmlMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 1. 반복문 처리:
 
 ```java
-if (itemNodes.isArray()) {
-    for (JsonNode itemNode : itemNodes) {
-        items.add(mapToWeatherItemNode(itemNode));
-    }
-} else if (itemNodes.isObject()) {
-    items.add(mapToWeatherItemNode(itemNodes));
-} else {
-    System.out.println("⚠️ No 'item' nodes found in XML body: " + itemsContainer);
+if(itemNodes.isArray()){
+        for(
+JsonNode itemNode :itemNodes){
+        items.
+
+add(mapToWeatherItemNode(itemNode));
+        }
+        }else if(itemNodes.
+
+isObject()){
+        items.
+
+add(mapToWeatherItemNode(itemNodes));
+        }else{
+        System.out.
+
+println("⚠️ No 'item' nodes found in XML body: "+itemsContainer);
 }
 
 ```
@@ -1278,7 +1193,8 @@ println("⚠️ 삭제할 날씨 캐시가 없습니다.");
 
 ```java
 List<WeatherItem> items = xmlMapper.readValue(
-    xml, new TypeReference<List<WeatherItem>>() {}
+        xml, new TypeReference<List<WeatherItem>>() {
+        }
 );
 
 ```
@@ -1344,7 +1260,7 @@ K6를 사용한 1차 부하 테스트(VUs: 10) 결과, 이 구조는 심각한 �
     * **요청 실패율:** **12.50%**
     * **RPS (초당 요청 수):** 약 0.52/s
 
-![1차 K6 테스트 결과]![img.png](src/main/resources/img.png)
+![img.png](src/main/resources/image/img.png)
 
 10명의 동시 사용자만으로도 서버 스레드가 모두 외부 API 응답을 기다리며 **대기(Blocking) 상태**에 빠졌습니다. 이로 인해 P95 응답 시간이 20초에 육박하고, 요청의 12.5%가 타임아웃으로
 실패했습니다. 이 구조로는 실제 트래픽을 감당할 수 없다고 판단했습니다.
@@ -1403,8 +1319,9 @@ K6를 사용한 1차 부하 테스트(VUs: 10) 결과, 이 구조는 심각한 �
 * **명확한 병목 식별:** Grafana 대시보드 분석 결과, DB 커넥션 풀과 JVM 메모리는 매우 안정적이었습니다. 2차 테스트의 `recommendation_duration` (P95 약 50초)을 통해,
   **서버의 병목이 아닌 외부 OpenAI API의 응답 속도**가 전체 E2E 시간의 병목임을 명확히 식별할 수 있었습니다.
 
-![Grafana 대시보드 - 2차 테스트]![대시보드1.JPG.jpg](src/main/resources/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C1.JPG.jpg)![대시보드3.JPG.jpg](src/main/resources/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C3.JPG.jpg)
-![대시보드5.JPG.jpg](src/main/resources/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C5.JPG.jpg)*(2차 테스트 당시 Grafana 대시보드. HTTP 응답(녹색)은
+![Grafana 대시보드 - 2차 테스트]*![대시보드1.JPG.jpg](src/main/resources/image/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C1.JPG.jpg)
+![대시보드3.JPG.jpg](src/main/resources/image/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C3.JPG.jpg)![대시보드5.JPG.jpg](src/main/resources/image/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C5.JPG.jpg)(
+2차 테스트 당시 Grafana 대시보드. HTTP 응답(녹색)은
 빠르고, E2E 시간(노란색)은 길며, DB(파란색)는 부하가 없는 것을 확인)*
 
 </details>
@@ -1427,7 +1344,8 @@ K6를 사용한 1차 부하 테스트(VUs: 10) 결과, 이 구조는 심각한 �
 
 <img width="347" height="332" alt="화면 캡처 2025-11-14 191646" src="https://github.com/user-attachments/assets/3b28a888-6a90-4f22-98d4-987dd617b855" />
 
-100명의 동시 사용자 부하에서 모든 요청이 성공했으며, 응답 시간이 최대 20초를 초과했습니다. 특히 N+1 쿼리 문제로 인해 게시글 목록 조회 시 각 게시글마다 좋아요 수를 별도로 조회하여 데이터베이스에 과도한 부하가 발생했습니다.
+100명의 동시 사용자 부하에서 모든 요청이 성공했으며, 응답 시간이 최대 20초를 초과했습니다. 특히 N+1 쿼리 문제로 인해 게시글 목록 조회 시 각 게시글마다 좋아요 수를 별도로 조회하여 데이터베이스에 과도한
+부하가 발생했습니다.
 
 <br>
 
@@ -1454,8 +1372,10 @@ public Long getLikeCount(Long postId) {
 
 ```java
 // 최적화 전: N+1 쿼리 문제
-posts.forEach(post -> {
-    post.getLikes(); // 각 게시글마다 별도 쿼리 발생
+posts.forEach(post ->{
+        post.
+
+getLikes(); // 각 게시글마다 별도 쿼리 발생
 });
 
 // 최적화 후: EntityGraph를 통한 배치 페칭
@@ -1496,14 +1416,14 @@ spring:
     * **반복 수행 시간 (평균):** **6.41ms** (1.16초 → 6.41ms, **99.4% 개선**)
     * **초당 요청 수 (RPS):** 약 27-30 req/s (**350% 증가**)
 
-| 항목 | 최적화 전 | 최적화 후 | 개선율 |
-|:---|:---|:---|:---|
-| **VUs** | 100명 | 100명 | 동일 |
-| **요청 실패율** | 0% | **0.00%** | ** 안정성 확보** |
-| **HTTP 요청 시간 (평균)** | 63.84ms | **40.1ms** | **-66.4%**  |
-| **HTTP 요청 시간 (P95)** | 200.81ms | **134.41ms** | **-38.1%** |
-| **반복 수행 시간 (평균)** | 11.6ms | **6.41ms** | **-50.4%**  |
-| **초당 요청 수 (RPS)** | 5-8 req/s | **27-30 req/s** | **+350%**  |
+| 항목                   | 최적화 전     | 최적화 후           | 개선율         |
+|:---------------------|:----------|:----------------|:------------|
+| **VUs**              | 100명      | 100명            | 동일          |
+| **요청 실패율**           | 0%        | **0.00%**       | ** 안정성 확보** |
+| **HTTP 요청 시간 (평균)**  | 63.84ms   | **40.1ms**      | **-66.4%**  |
+| **HTTP 요청 시간 (P95)** | 200.81ms  | **134.41ms**    | **-38.1%**  |
+| **반복 수행 시간 (평균)**    | 11.6ms    | **6.41ms**      | **-50.4%**  |
+| **초당 요청 수 (RPS)**    | 5-8 req/s | **27-30 req/s** | **+350%**   |
 
 <img width="317" height="355" alt="화면 캡처 2025-11-14 191532" src="https://github.com/user-attachments/assets/84da00a7-59e0-4e94-8e52-2eea66571711" />
 
@@ -1513,26 +1433,26 @@ spring:
 
 #### HTTP 요청 소요 시간 (백분위수)
 
-| 백분위수 | 최적화 전 | 최적화 후 | 개선율 |
-|:---|:---|:---|:---|
-| **p50 (중앙값)** | 63.84ms | **40.1ms** | **-37.2%** |
-| **p90** | 521.3ms | **175.27ms** | **-66.4%** |
-| **p95** | 20.81초 | **12.88초** | **-38.1%** |
+| 백분위수          | 최적화 전   | 최적화 후        | 개선율        |
+|:--------------|:--------|:-------------|:-----------|
+| **p50 (중앙값)** | 63.84ms | **40.1ms**   | **-37.2%** |
+| **p90**       | 521.3ms | **175.27ms** | **-66.4%** |
+| **p95**       | 20.81초  | **12.88초**   | **-38.1%** |
 
 #### 시스템 리소스 사용률
 
-| 지표 | 최적화 전 | 최적화 후 | 상태 |
-|:---|:---|:---|:---|
-| **초당 요청 수** | 5-8 req/s | **27-30 req/s** | **+350%** 📈 |
-| **CPU 사용률** | 6.73ms | **6.41ms** | -4.8% |
-| **메모리 사용량** | 148.71ms | **127.15ms** | -14.5% |
-| **네트워크 I/O** | 157.2ms | **134.41ms** | -14.4% |
+| 지표           | 최적화 전     | 최적화 후           | 상태           |
+|:-------------|:----------|:----------------|:-------------|
+| **초당 요청 수**  | 5-8 req/s | **27-30 req/s** | **+350%** 📈 |
+| **CPU 사용률**  | 6.73ms    | **6.41ms**      | -4.8%        |
+| **메모리 사용량**  | 148.71ms  | **127.15ms**    | -14.5%       |
+| **네트워크 I/O** | 157.2ms   | **134.41ms**    | -14.4%       |
 
 #### 주요 관찰 사항
 
-*  **에러율 제거**: 다수의 에러 스파이크 → 에러 감지 안됨 (100% 개선)
-*  **안정적인 처리량**: 가변적인 성공률 → 초당 30+ 체크, 100% 성공률
-*  **효율적인 리소스 활용**: CPU, 메모리, 네트워크 사용량 모두 감소
+* **에러율 제거**: 다수의 에러 스파이크 → 에러 감지 안됨 (100% 개선)
+* **안정적인 처리량**: 가변적인 성공률 → 초당 30+ 체크, 100% 성공률
+* **효율적인 리소스 활용**: CPU, 메모리, 네트워크 사용량 모두 감소
 
 <img width="497" height="183" alt="화면 캡처 2025-11-14 191427" src="https://github.com/user-attachments/assets/3479a6d7-4b6a-49a7-8f97-07ec392a01ed" />
 
@@ -1546,13 +1466,100 @@ spring:
 
 * **안정성 및 확장성 확보:** Redis 캐싱과 쿼리 최적화를 통해 **요청 실패율이 0%로** 개선되었고, 데이터베이스 부하가 70% 감소하여 높은 동시 사용자 수에서도 안정적인 서비스 제공이 가능해졌습니다.
 
-* **사용자 경험(UX) 대폭 개선:** 평균 응답 시간이 **66.4% 단축**(521.3ms → 175.27ms)되어, 사용자는 커뮤니티 기능을 훨씬 빠르게 이용할 수 있게 되었습니다. 요청의 90%가 200ms 이하의 응답 시간을 기록했습니다.
+* **사용자 경험(UX) 대폭 개선:** 평균 응답 시간이 **66.4% 단축**(521.3ms → 175.27ms)되어, 사용자는 커뮤니티 기능을 훨씬 빠르게 이용할 수 있게 되었습니다. 요청의 90%가
+  200ms 이하의 응답 시간을 기록했습니다.
 
 * **처리량 350% 향상:** 초당 처리 가능한 요청 수가 5-8 req/s에서 **27-30 req/s로 3.5배 증가**하여, 실제 트래픽 급증 시에도 대응할 수 있는 확장 가능한 아키텍처를 구축했습니다.
 
 * **리소스 효율성 개선:** CPU, 메모리, 네트워크 사용량이 모두 감소하여 동일한 인프라에서 더 많은 트래픽을 처리할 수 있게 되었습니다.
 
 </details>
+
+<details>
+<summary><strong>📈 오늘의 옷차림 추천 기능: Redis 캐싱을 통한 성능 고도화</strong></summary>
+<br>
+
+**1. 문제점: 외부 API 의존으로 인한 성능 저하 및 비용 문제 (최적화 전)**
+
+최적화 전 AI 추천 기능은 매 요청마다 외부 OpenAI API를 직접 호출하는 방식으로 구현되었습니다. 이 방식은 외부 API의 응답 속도에 따라 전체 시스템 성능이 좌우되는 심각한 병목 지점을 가지고
+있었습니다. K6를 사용한 부하 테스트(VUs: 10, 30초) 결과 심각한 성능 한계가 발견되었습니다.
+
+- **테스트 결과 (최적화 전):**
+    - **VUs (동시 사용자):**10명
+    - **총 요청 수:**80
+    - **요청 실패율:****0%**
+    - **HTTP 요청 시간 (평균):**2.6초
+    - **HTTP 요청 시간 (P95):**3.65초
+    - **초당 요청 수 (RPS):**약 2.66 req/s
+
+  ![대시보드3-1.png](src/main/resources/image/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C3-1.png)
+
+10명의 동시 사용자 부하에서 평균 응답 시간이 2.6초를 초과하여 사용자 경험을 심각하게 저해했습니다. 또한,모든 요청이 외부 API를 호출하여 불필요한 비용을 발생시키는 비효율적인 구조였습니다. AI API
+호출이 주된 지연 원인으로 명확히 확인되었습니다.
+
+**2. 해결: Redis 캐싱 및 회복탄력성 패턴 적용**
+
+성능 문제를 해결하기 위해 다층 최적화 전략을 적용했습니다.
+
+1. **Redis 캐싱 레이어 도입:**
+
+- 동일한 AI 프롬프트(날씨, 사용자 정보 등)에 대한 응답을 Redis에 캐싱하여, 반복적인 API 호출을 원천적으로 제거했습니다.
+- Spring의 `@Cacheable`을 활용한 Cache-aside 패턴을 적용하여, 캐시 미스 시에만 AI API를 호출하도록 구현했습니다.
+- 이를 통해 **AI API 호출을 90% 이상 감소**시키고, 응답 시간을 획기적으로 단축했습니다.
+
+```java
+// Redis를 활용한 AI 응답 캐싱
+@Cacheable(value = "dailyAi", key = "#{systemPrompt, #userPrompt}")
+public String callForJson(String systemPrompt, String userPrompt) {
+    //캐시 미스 시에만 이 로직이 실행됨
+    return chatClient.prompt()...call().content();
+}
+```
+
+1. 회복탄력성(Resilience) 패턴 적용
+
+- `@Retry`: 외부 API의 일시적인 오류에 대비해, 실패 시 자동으로 3회 재시도하도록 설정하여 안정성을 높였습니다.
+- `@CircuitBreaker`: 반복적인 실패가 감지되면, 서킷을 열어 즉시 차단하고 Fallback 메서드를 실행하여 시스템 전체 장애를 방지했습니다.
+
+```java
+// Retry와 CircuitBreaker를 함께 적용
+@Cacheable(value = "dailyAi", key = "{#systemPrompt, #userPrompt}")
+@Retry(name = "dailyAiApi", fallbackMethod = "fallbackCallForJson")
+@CircuitBreaker(name = "dailyAiApi", fallbackMethod = "fallbackCallForJson")
+public String callForJson(String systemPrompt, String userPrompt) { ...}
+```
+
+**3. 개선 결과 (최적화 후)**
+
+동일한 부하 조건(VUs: 10, 30초)에서 2차 테스트를 수행한 결과, 모든 지표가 극적으로 개선되었습니다.
+
+- **테스트 결과 (최적화 후):**
+    - **VUs (동시 사용자):10명**
+    - **총 요청 수:283**
+    - **요청 실패율:0.00%**
+    - **HTTP 요청 시간 (평균):30.68ms**
+    - **HTTP 요청 시간 (P95):45.44ms**
+    - **초당 요청 수 (RPS):약 9.43 req/s**
+
+![대시보드3-2.png](src/main/resources/image/%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C3-2.png)
+
+| **항목**               | **최적화 전**  | **최적화 후**      | **개선율**    |
+|----------------------|------------|----------------|------------|
+| **VUs**              | 10명        | 10명            | 동일         |
+| **요청 실패율**           | 0%         | **0.00%**      | 안정성 확보     |
+| **HTTP 요청 시간 (평균)**  | 2,600ms    | **30.68ms**    | **-98.8%** |
+| **HTTP 요청 시간 (P95)** | 3,650ms    | **45.44ms**    | **-98.8%** |
+| **초당 요청 수 (RPS)**    | 2.66 req/s | **9.43 req/s** | **+254%**  |
+
+**4. 결론**
+
+- **사용자 경험(UX) 혁신**: 평균 응답 시간이 98.8% 단축(2.6초 → 30ms)되어 사용자는 느리다고 느낄 틈 없이 즉각적인 AI 추천을 받을 수 있게 되었습니다.
+- **처리량 2.5배 향상**: 초당 처리 가능한 요청 수가 2.66 req/s에서 9.43 req/s로 약 2.5배 증가하여, 더 많은 동시 사용자를 안정적으로 처리할 수 있는 확장성을 확보했습니다.
+- **비용 효율성 극대화**: 불필요한 외부 API 호출을 90% 이상 제거하여, 서비스 운영 비용을 직접적으로 절감하는 비즈니스적 효과를 거두었습니다.
+- **안정성 확보**: `@Retry`와 `@CircuitBreaker` 패턴을 통해 외부 API의 일시적인 장애 상황에서도 시스템이 안정적으로 동작할 수 있는 기반을 마련했습니다.
+
+</details>
+
 
 <details>
 <summary><strong>📈 다수 사용자에 따른 외부 API 호출 속도 최적화 </strong></summary>
@@ -1663,16 +1670,15 @@ spring:
     - 평균 iteration 시간과 처리율(135 req/s) 고려 시 시스템이 충분히 견디는 상태
 - **데이터 전송량**
     - 두 번째 테스트에서 네트워크 부담 큼 → 실제 서비스에서 대용량 처리 가능 여부 확인 필요
-    - 
+    -
 <br>
 
 </details>
 
 
 
------
 
-<br>
+-----
 
 ## 🧑‍💻 팀원 소개
 
