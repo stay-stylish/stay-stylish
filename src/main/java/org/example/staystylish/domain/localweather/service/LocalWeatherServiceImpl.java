@@ -107,8 +107,7 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
             log.info("Redis Cache HIT → key={}", cacheKey);
 
             // LinkedHashMap → WeatherResponse 변환
-            LocalWeatherResponse cached = new com.fasterxml.jackson.databind.ObjectMapper()
-                    .convertValue(cachedObj, LocalWeatherResponse.class);
+            LocalWeatherResponse cached = jsonMapper.convertValue(cachedObj, LocalWeatherResponse.class);
 
             // 캐시가 있을 경우에도 최종 DTO로 변환하여 반환
             return Mono.just(LocalWeatherMapper.toUserWeatherResponse(cached.items(), region));

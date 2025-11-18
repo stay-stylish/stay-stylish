@@ -44,11 +44,11 @@ function fetchWithRetry(url, retries = 3, timeoutSec = 10) {
 // === 메인 VU 루프 ===
 export default function () {
     // 1. Baseline 요청
-    let baselineRes = fetchWithRetry(BASELINE_URL + '/weather');
+    let baselineRes = fetchWithRetry(BASELINE_URL + '/api/v1/weather/weather-by-gps');
     check(baselineRes, { 'baseline status is 200': r => r && r.status === 200 });
 
     // 2. Optimized 요청
-    let optimizedRes = fetchWithRetry(OPTIMIZED_URL + '/weather');
+    let optimizedRes = fetchWithRetry(OPTIMIZED_URL + '/api/v1/weather/weather-by-gps');
     check(optimizedRes, { 'optimized status is 200': r => r && r.status === 200 });
 
     // === pacing 조절 ===
