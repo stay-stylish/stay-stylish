@@ -3,9 +3,14 @@ package org.example.staystylish.domain.user.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.staystylish.common.constants.RedisKeyConstants;
+import org.example.staystylish.common.exception.GlobalException;
 import org.example.staystylish.common.security.JwtProvider;
 import org.example.staystylish.domain.user.code.UserErrorCode;
 import org.example.staystylish.domain.user.dto.request.LoginRequest;
@@ -14,25 +19,23 @@ import org.example.staystylish.domain.user.dto.response.UserResponse;
 import org.example.staystylish.domain.user.entity.Gender;
 import org.example.staystylish.domain.user.entity.Provider;
 import org.example.staystylish.domain.user.entity.User;
-import org.example.staystylish.domain.user.exception.UserException;
 import org.example.staystylish.domain.user.repository.UserRepository;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final Duration LOCK_TIMEOUT = Duration.ofSeconds(5);
+    // TypeReference 상수화
+    private static final TypeReference<Map<String, String>> TOKEN_DATA_TYPE =
+            new TypeReference<>() {
+            };
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
@@ -41,28 +44,22 @@ public class AuthService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
-    private static final Duration LOCK_TIMEOUT = Duration.ofSeconds(5);
-
-    // TypeReference 상수화
-    private static final TypeReference<Map<String, String>> TOKEN_DATA_TYPE =
-            new TypeReference<>() {};
-
     @Transactional
-    public UserResponse signup(SignupRequest request, String baseUrl) {
+    public UserResponse signup(SignupRequest request) {
         String email = request.email();
         String lockKey = RedisKeyConstants.signupLockKey(email);
 
         // ① 락 획득 시도
         Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "LOCKED", LOCK_TIMEOUT);
         if (Boolean.FALSE.equals(acquired)) {
-            throw new UserException(UserErrorCode.SIGNUP_IN_PROGRESS);
+            throw new GlobalException(UserErrorCode.SIGNUP_IN_PROGRESS);
         }
 
         try {
             // ② 삭제되지 않은 활성 사용자 확인
             if (userRepository.existsByEmailAndNotDeleted(email)) {
                 log.warn("중복된 활성 사용자 가입 시도: {}", email);
-                throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
+                throw new GlobalException(UserErrorCode.DUPLICATE_EMAIL);
             }
 
             // ③ 탈퇴한 사용자 확인 및 복구
@@ -97,13 +94,13 @@ public class AuthService {
                     log.info("탈퇴한 계정 복구 완료: {}", email);
 
                     // 인증 메일 발송
-                    emailVerificationService.issueTokenAndSendMail(user, baseUrl);
+                    emailVerificationService.issueTokenAndSendMail(user);
 
                     return UserResponse.from(user);
                 } else {
                     // 이 경우는 existsByEmailAndNotDeleted에서 걸러져야 하지만, 혹시 모르니 처리
                     log.warn("활성 사용자 가입 시도: {}", email);
-                    throw new UserException(UserErrorCode.DUPLICATE_EMAIL);
+                    throw new GlobalException(UserErrorCode.DUPLICATE_EMAIL);
                 }
             }
 
@@ -121,7 +118,7 @@ public class AuthService {
             userRepository.save(user);
 
             // ⑤ 인증 메일 발송
-            emailVerificationService.issueTokenAndSendMail(user, baseUrl);
+            emailVerificationService.issueTokenAndSendMail(user);
             log.info("신규 회원가입 완료 및 인증 메일 발송: {}", user.getEmail());
 
             return UserResponse.from(user);
@@ -136,15 +133,19 @@ public class AuthService {
     @Transactional(readOnly = true)
     public Map<String, String> login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(UserErrorCode.USER_NOT_FOUND));
 
-        if (user.isDeleted()) throw new UserException(UserErrorCode.USER_DELETED);
+        if (user.isDeleted()) {
+            throw new GlobalException(UserErrorCode.USER_DELETED);
+        }
 
-        if (!user.isEmailVerified())
-            throw new UserException(UserErrorCode.EMAIL_NOT_VERIFIED);
+        if (!user.isEmailVerified()) {
+            throw new GlobalException(UserErrorCode.EMAIL_NOT_VERIFIED);
+        }
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword()))
-            throw new UserException(UserErrorCode.INVALID_PASSWORD);
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new GlobalException(UserErrorCode.INVALID_PASSWORD);
+        }
 
         // Access + Refresh 발급
         String accessToken = jwtProvider.generateAccessToken(user.getEmail());
@@ -177,7 +178,7 @@ public class AuthService {
         // DEBUG: Redis에 키가 있는지 확인
         if (tokenJson == null) {
             log.warn("[OAuth 토큰 교환 실패] 유효하지 않거나 만료된 코드: {}", code);
-            throw new UserException(UserErrorCode.INVALID_SESSION);
+            throw new GlobalException(UserErrorCode.INVALID_SESSION);
         }
 
         log.info("[OAuth 교환] Redis에서 코드 조회 성공");
@@ -194,7 +195,7 @@ public class AuthService {
 
             if (email == null || accessToken == null || refreshToken == null) {
                 log.error("[OAuth 토큰 교환 실패] 필수 필드 누락 - code: {}", code);
-                throw new UserException(UserErrorCode.INVALID_SESSION);
+                throw new GlobalException(UserErrorCode.INVALID_SESSION);
             }
 
             // 일회용 코드 삭제 (사용 완료)
@@ -213,16 +214,16 @@ public class AuthService {
         } catch (JsonProcessingException e) {
             // JSON 파싱 오류 구체적 처리
             log.error("[OAuth 토큰 교환 실패] JSON 파싱 오류 - code: {}, json: {}", code, tokenJson, e);
-            throw new UserException(UserErrorCode.INVALID_SESSION);
+            throw new GlobalException(UserErrorCode.INVALID_SESSION);
 
-        } catch (UserException e) {
+        } catch (GlobalException e) {
             // 비즈니스 로직 예외는 그대로 재던지기
             throw e;
 
         } catch (Exception e) {
             // 예기치 않은 오류 별도 처리 (모니터링/알림 대상)
             log.error("[OAuth 토큰 교환 실패] 예기치 않은 오류 발생 - code: {}", code, e);
-            throw new UserException(UserErrorCode.INVALID_SESSION);
+            throw new GlobalException(UserErrorCode.INVALID_SESSION);
         }
     }
 
@@ -230,14 +231,14 @@ public class AuthService {
     @Transactional(readOnly = true)
     public Map<String, String> reissue(String refreshToken) {
         if (!jwtProvider.validateToken(refreshToken)) {
-            throw new UserException(UserErrorCode.INVALID_REFRESH_TOKEN);
+            throw new GlobalException(UserErrorCode.INVALID_REFRESH_TOKEN);
         }
 
         String email = jwtProvider.getUsername(refreshToken);
         String savedToken = refreshTokenService.get(email);
 
         if (savedToken == null || !savedToken.equals(refreshToken)) {
-            throw new UserException(UserErrorCode.INVALID_SESSION);
+            throw new GlobalException(UserErrorCode.INVALID_SESSION);
         }
 
         // 새 Access 토큰 발급

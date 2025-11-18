@@ -8,7 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.staystylish.common.dto.response.ApiResponse;
 import org.example.staystylish.common.security.UserPrincipal;
-import org.example.staystylish.domain.community.consts.CommunitySuccessCode;
+import org.example.staystylish.domain.community.code.CommunitySuccessCode;
 import org.example.staystylish.domain.community.dto.request.PostRequest;
 import org.example.staystylish.domain.community.dto.response.PostResponse;
 import org.example.staystylish.domain.community.service.PostService;

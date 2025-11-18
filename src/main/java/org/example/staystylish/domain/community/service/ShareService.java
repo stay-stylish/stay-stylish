@@ -1,11 +1,11 @@
 package org.example.staystylish.domain.community.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.staystylish.domain.community.consts.CommunityErrorCode;
+import org.example.staystylish.common.exception.GlobalException;
+import org.example.staystylish.domain.community.code.CommunityErrorCode;
 import org.example.staystylish.domain.community.dto.response.ShareResponse;
 import org.example.staystylish.domain.community.entity.Post;
 import org.example.staystylish.domain.community.entity.Share;
-import org.example.staystylish.domain.community.exception.CommunityException;
 import org.example.staystylish.domain.community.repository.PostRepository;
 import org.example.staystylish.domain.community.repository.ShareRepository;
 import org.example.staystylish.domain.user.entity.User;
@@ -23,10 +23,10 @@ public class ShareService {
     @Transactional
     public ShareResponse sharePost(User user, Long postId, String platform) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new CommunityException(CommunityErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(CommunityErrorCode.POST_NOT_FOUND));
 
         if (platform == null || platform.isBlank()) {
-            throw new CommunityException(CommunityErrorCode.INVALID_PLATFORM);
+            throw new GlobalException(CommunityErrorCode.INVALID_PLATFORM);
         }
 
         shareRepository.save(Share.builder()
@@ -36,7 +36,8 @@ public class ShareService {
                 .build());
 
         postCounterService.incrShare(post.getId());
-        return ShareResponse.of(post.getId(), platform.toUpperCase(), post.getShareCount());
+
+        return ShareResponse.of(post.getId(), platform.toUpperCase(), postCounterService.getShareCount(post.getId()));
     }
 }
 
