@@ -13,13 +13,5 @@ CREATE INDEX IF NOT EXISTS idx_region_grid_lat_lon
     ON region_grid (latitude, longitude);
 
 -- DailyOutfit 도메인
-DO $$
-BEGIN
-    IF EXISTS (
-        SELECT FROM pg_tables
-        WHERE tablename = 'user_category_feedback'
-    ) THEN
-        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_user_feedback_user_id_created_at
-                 ON user_category_feedback (user_id, created_at DESC)';
-END IF;
-END $$;
+CREATE INDEX IF NOT EXISTS idx_user_feedback_user_id_created_at
+    ON user_category_feedback (user_id, created_at DESC);
