@@ -1588,9 +1588,9 @@ public String callForJson(String systemPrompt, String userPrompt) { ...}
 
 ---
 1차 테스트 진행 내용
-![기상청api대시보드1]
-![기상청api대시보드2]
-![기상청api대시보드3]
+![기상청api대시보드1](src/main/resources/기상청api2차테스트2.PNG)
+![기상청api대시보드2](src/main/resources/기상청api대시보드1.png)
+![기상청api대시보드3](src/main/resources/기상청api대시보드3.png)
 
 | 구분 | 항목 | 값 | 해석 |
 | --- | --- | --- | --- |
@@ -1636,8 +1636,8 @@ public String callForJson(String systemPrompt, String userPrompt) { ...}
     - Prometheus에 최소 메트릭 전송
 
 2차 테스트 진행 내용
-![기상청api2차대시보드1]
-![기상청api2차대시보드2]
+![기상청api2차대시보드1](src/main/resources/기상청api2차테스트2.PNG)
+![기상청api2차대시보드2](src/main/resources/기상청api2차테스트2.PNG)
 
 
 
