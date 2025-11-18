@@ -65,7 +65,13 @@
 
 ## 🏗️ 아키텍처
 
-![image.png](src/main/resources/image/image.png)
+### V0 ( 개발 )
+
+![아키텍처 (개발).png](src/main/resources/image/%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98%20%28%EA%B0%9C%EB%B0%9C%29.png)
+
+### V1 ( 배포 )
+
+![아키텍처 (배포).png](src/main/resources/image/%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98%20%28%EB%B0%B0%ED%8F%AC%29.png)
 
 * **CI/CD & Monitoring:**
     * **GitHub Actions:** `dev` 브랜치 Push 시 자동 Docker 이미지 빌드/Push 및 AWS SSM을 통한 ECS 배포.
