@@ -1,5 +1,6 @@
 package org.example.staystylish.domain.localweather.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.net.URLEncoder;
 import org.example.staystylish.common.exception.advice.ExternalApiException;
@@ -13,6 +14,8 @@ import org.example.staystylish.domain.localweather.repository.RegionRepository;
 import org.example.staystylish.domain.localweather.repository.LocalWeatherRepository;
 import org.example.staystylish.domain.localweather.util.KmaGridConverter;
 import org.example.staystylish.domain.localweather.util.LocalWeatherMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -33,6 +36,8 @@ import java.util.*;
 @Service
 public class LocalWeatherServiceImpl implements LocalWeatherService {
 
+    private static final Logger log = LoggerFactory.getLogger(LocalWeatherServiceImpl.class);
+
     private final WebClient webClient;
     private final RedisTemplate<String, Object> redisTemplate;
     private final LocalWeatherRepository localWeatherRepository;
@@ -40,6 +45,7 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
     private final String serviceKey;
     private final XmlMapper xmlMapper;
 
+    private final ObjectMapper jsonMapper = new ObjectMapper();
     private final Duration CACHE_TTL = Duration.ofMinutes(35); // Redis TTL 35분
 
 
@@ -66,6 +72,8 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
         double lat = request.latitude();
         double lon = request.longitude();
 
+        log.info("🌏 요청 위경도 → lat={}, lon={}", lat, lon);
+
         // DB에서 가장 가까운 region 조회
         Region region = regionRepository.findNearestRegions(lat, lon, PageRequest.of(0, 1))
                 .stream()
@@ -74,6 +82,7 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
 
         // 이 지역 정보 (region)를 최종 UserWeatherResponse에 사용
         if (serviceKey == null || serviceKey.isBlank()) {
+            log.error("❌ Service Key is missing!");
             return Mono.error(new ExternalApiException("KMA service key not configured"));
         }
 
@@ -87,18 +96,25 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
         String baseDate = base[0];
         String baseTime = base[1];
 
+        log.info("기준 시각 → baseDate={}, baseTime={}", baseDate, baseTime);
+
         // Redis 캐시 확인
         String cacheKey = "weather:" + nx + ":" + ny + ":" + baseDate + ":" + baseTime;
         Object cachedObj = redisTemplate.opsForValue().get(cacheKey);
 
         if (cachedObj != null) {
+
+            log.info("Redis Cache HIT → key={}", cacheKey);
+
             // LinkedHashMap → WeatherResponse 변환
-            LocalWeatherResponse cached = new com.fasterxml.jackson.databind.ObjectMapper()
-                    .convertValue(cachedObj, LocalWeatherResponse.class);
+            LocalWeatherResponse cached = jsonMapper.convertValue(cachedObj, LocalWeatherResponse.class);
 
             // 캐시가 있을 경우에도 최종 DTO로 변환하여 반환
             return Mono.just(LocalWeatherMapper.toUserWeatherResponse(cached.items(), region));
         }
+
+        log.warn("Redis Cache MISS → key={}", cacheKey);
+
 
         // 인증키 URL 인코딩
         String encodedKey;
@@ -124,15 +140,20 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
                 .retrieve()
                 .bodyToMono(String.class) // XML 문자열로 받음
                 .map(xml -> {
+
+                    log.info("KMA API 호출 성공");
+
                     LocalWeatherResponse response = parseWeatherItemsFromXml(xml, nx, ny, baseDate, baseTime);
 
                     List<LocalWeatherItem> items = response.items();
                     // DB 저장: WeatherMapper.toWeather 호출 시 확보된 지역명(String) 사용
                     LocalWeather localWeather = LocalWeatherMapper.toWeather(items, region);
                     localWeatherRepository.save(localWeather);
+                    log.info("DB 저장 완료 (regionId={})", region.getId());
 
                     // Redis 캐시 저장 (TTL 적용)
                     redisTemplate.opsForValue().set(cacheKey, response, CACHE_TTL);
+                    log.info("Redis 캐시 저장 완료 → key={}, TTL={}min", cacheKey, CACHE_TTL.toMinutes());
 
                     return response; // 다음 map 체인을 위해 WeatherResponse 반환
                 })
@@ -140,8 +161,10 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
                 // 최종 DTO 변환: WeatherResponse를 UserWeatherResponse로 변환
                 .map(localWeatherResponse -> LocalWeatherMapper.toUserWeatherResponse(localWeatherResponse.items(),
                         region))
-                .onErrorMap(WebClientRequestException.class,
-                        ex -> new ExternalApiException("KMA request failed: " + ex.getMessage(), ex));
+                .onErrorMap(WebClientRequestException.class, ex -> {
+                    log.error("❌ WebClient Request failed: {}", ex.getMessage(), ex);
+                    return new ExternalApiException("KMA request failed: " + ex.getMessage(), ex);
+                });
     }
 
     /**
@@ -153,47 +176,49 @@ public class LocalWeatherServiceImpl implements LocalWeatherService {
 
         try {
             // XML을 Jackson 트리로 파싱
-            com.fasterxml.jackson.databind.JsonNode root = xmlMapper.readTree(xml);
+            var root = xmlMapper.readTree(xml);
 
-            com.fasterxml.jackson.databind.JsonNode header = root.path("header");
-            com.fasterxml.jackson.databind.JsonNode bodyNode = root.path("body");
+            var header = root.path("header");
+            var bodyNode = root.path("body");
 
             // API 응답 코드 확인
             if (!header.isMissingNode()) {
                 String resultCode = header.path("resultCode").asText();
                 String resultMsg = header.path("resultMsg").asText();
                 if (!"00".equals(resultCode)) {
+                    log.error("❌ KMA API Error: {} - {}", resultCode, resultMsg);
                     throw new ExternalApiException("KMA API error: " + resultCode + " - " + resultMsg);
                 }
             }
 
             // item 노드 접근 (items → item 순서)
-            com.fasterxml.jackson.databind.JsonNode itemsContainer = bodyNode.path("items");
-            com.fasterxml.jackson.databind.JsonNode itemNodes = itemsContainer.path("item");
+            var itemsContainer = bodyNode.path("items");
+            var itemNodes = itemsContainer.path("item");
 
-            // item이 배열인지 단일 객체인지 구분하여 처리
-            if (itemNodes.isArray()) {
-                for (com.fasterxml.jackson.databind.JsonNode itemNode : itemNodes) {
-                    items.add(mapToWeatherItemNode(itemNode));
+            // item이 배열인지 단일 객체인지 구분하여 처리 (container 여부만 확인 후 반복)
+            if (itemNodes.isContainerNode()) {
+                if (itemNodes.isArray()) {
+                    itemNodes.forEach(node -> items.add(mapToWeatherItemNode(node)));
+                } else {
+                    items.add(mapToWeatherItemNode(itemNodes));
                 }
-            } else if (itemNodes.isObject()) {
-                items.add(mapToWeatherItemNode(itemNodes));
             } else {
-                System.out.println("⚠️ No 'item' nodes found in XML body: " + itemsContainer);
+                log.warn("⚠️ No item nodes found in XML");
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("❌ XML 파싱 오류", e);
         }
+
         Map<String, Object> meta = Map.of(
-                "nx", nx,
-                "ny", ny,
+                "nx", nx, "ny", ny,
                 "base_date", baseDate,
                 "base_time", baseTime
         );
 
         return new LocalWeatherResponse(items, meta);
     }
+
 
 
     /**
