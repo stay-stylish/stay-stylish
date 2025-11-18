@@ -871,6 +871,7 @@ public RedisConnectionFactory redisConnectionFactory() {
 <details>
 <summary><strong>[Redis / WebClient JSON → DTO 변환 문제]</strong></summary>
 <br>
+
 ```jsx
 java.lang.ClassCastException
 :
@@ -893,9 +894,7 @@ example.staystylish.domain.localweather.dto.WeatherResponse
 
 코드에서 `LinkedHashMap` 객체를 `WeatherResponse`로 직접 변환하려고 해서 발생한 오류
 
-. Spring에서 `RestTemplate`이나 `WebClient`로 외부 API를 호출할 때 JSON을 `Map`으로 반환하면 생긴다고함
-
-차근차근 뜯어보면
+. Spring에서 `RestTemplate`이나 `WebClient`로 외부 API를 호출할 때 JSON을 `Map`으로 반환하면 생긴다고 함.
 
 ```jsx
 org.example.staystylish.domain.localweather.service.WeatherServiceImpl.getWeatherByLatLon(WeatherServiceImpl.java
