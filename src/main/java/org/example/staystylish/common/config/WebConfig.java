@@ -11,7 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
-    @Value("${app.frontend.deploy-url:https://www.staystylish.store}")
+    @Value("${app.frontend.deploy-url:https://www.stay-stylish.store}")
     private String vercelFrontendUrl;
 
     @Override
@@ -19,7 +19,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOriginPatterns(
                         frontendUrl,       // http://localhost:3000
-                        vercelFrontendUrl  // https://www.staystylish.store
+                        vercelFrontendUrl  // https://www.stay-stylish.store
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders(
